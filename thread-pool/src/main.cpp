@@ -218,12 +218,16 @@ int main(int argc, char* argv[])
    google::InitGoogleLogging(argv[0]);
    google::InstallFailureSignalHandler();
 
+   // defaults for program options
+   size_t pool_size = 2;
+   size_t work_count = 10;
+
    // program options
    boost::program_options::options_description desc("Allowed options");
    desc.add_options()
-   ("help", "produce help message")
-   ("pool-size", boost::program_options::value<size_t>(), "set pool size")
-   ("work-count", boost::program_options::value<size_t>(), "set work unit count");
+   ("help,h", "produce help message")
+   ("pool-size,s", boost::program_options::value<size_t>(&pool_size), "set pool size")
+   ("work-count,c", boost::program_options::value<size_t>(&work_count), "set work unit count");
 
    boost::program_options::variables_map vm;
    boost::program_options::store(
@@ -236,15 +240,8 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
    }
 
-   if (vm.count("pool-size"))
-   {
-      LOG(INFO)<< "pool size set to " << vm["pool-size"].as<size_t>();
-   }
-   else
-   {
-      std::cout << desc << std::endl;
-      return EXIT_FAILURE;
-   }
+   LOG(INFO)<< "pool size is " << pool_size;
+   LOG(INFO)<< "work unit count is " << work_count;
 
    // work
    typedef queue<std::deque<worker> > queue_t;
@@ -254,13 +251,13 @@ int main(int argc, char* argv[])
    typedef producer<queue_t, worker> producer_t;
    typedef consumer<queue_t, worker> consumer_t;
 
-   thread_pool pool(vm["pool-size"].as<size_t>());
+   thread_pool pool(pool_size);
 
    // run producer
-   pool.run_task(producer_t(the_queue, vm["work-count"].as<size_t>()));
+   pool.run_task(producer_t(the_queue, work_count));
 
    // wait a bit for producer to generate tasks
-   boost::this_thread::sleep(boost::posix_time::seconds(5));
+   boost::this_thread::sleep(boost::posix_time::seconds(1));
 
    // consume tasks until queue is empty
    for (; the_queue.size();
