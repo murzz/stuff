@@ -6,7 +6,6 @@
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
-#include <boost/foreach.hpp>
 #include <boost/random.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/program_options.hpp>
@@ -21,7 +20,7 @@ private:
    boost::thread_group threads_;
    std::size_t available_;
    boost::mutex mutex_;
-public:
+   public:
 
    /// @brief Constructor.
    thread_pool(std::size_t pool_size) :
@@ -30,7 +29,7 @@ public:
       DLOG(INFO)<< __func__;
       for (std::size_t idx = 0; idx < pool_size; ++idx)
       {
-         threads_.create_thread( boost::bind(&boost::asio::io_service::run, &io_service_));
+         threads_.create_thread( boost::bind(&boost::asio::io_service::run, boost::ref(io_service_)));
       }
    }
 
@@ -122,14 +121,14 @@ struct worker    //:boost::noncopyable
    }
    void operator()()
    {
-      LOG(INFO)<< boost::this_thread::get_id() <<" work in progress";
+      LOG(INFO)<< "[" << boost::this_thread::get_id() <<"] work in progress";
 
       boost::random::mt19937 rng;
       boost::random::uniform_int_distribution<> rnd(1,10);
 
       boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
       done_=true;
-      LOG(INFO)<< boost::this_thread::get_id() <<" work done";
+      LOG(INFO)<< "[" << boost::this_thread::get_id() <<"] work done";
    }
    bool done_;
 };
@@ -148,6 +147,7 @@ public:
    {
       boost::unique_lock<boost::mutex> lock(mutex_);
       container_.push_back(value);
+      LOG(INFO)<< "work pushed";
    }
 
    typename container::size_type size()
@@ -161,6 +161,7 @@ public:
       boost::unique_lock<boost::mutex> lock(mutex_);
       value_t item = container_.front();
       container_.pop_front();
+      LOG(INFO)<< "work popped";
       return item;
    }
 private:
@@ -172,8 +173,9 @@ template<class queue, class worker>
 struct producer
 {
    queue& queue_;
-   producer(queue& value) :
-         queue_(value)
+   size_t work_count_;
+   producer(queue& value, const size_t& work_count) :
+         queue_(value), work_count_(work_count)
    {
 
    }
@@ -182,7 +184,7 @@ struct producer
       boost::random::mt19937 rng;
       boost::random::uniform_int_distribution<> rnd(1, 2);
 
-      for (int idx = 10; idx;
+      for (size_t idx = work_count_; idx;
             --idx/*, boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)))*/)
       {
          worker wrk;
@@ -205,7 +207,7 @@ struct consumer
       if (queue_.size())
       {
          worker wrk = queue_.pop();
-         wrk.operator()();
+         wrk();
       }
    }
 };
@@ -218,8 +220,10 @@ int main(int argc, char* argv[])
 
    // program options
    boost::program_options::options_description desc("Allowed options");
-   desc.add_options()("help", "produce help message")("pool-size",
-         boost::program_options::value<size_t>(), "set pool size");
+   desc.add_options()
+   ("help", "produce help message")
+   ("pool-size", boost::program_options::value<size_t>(), "set pool size")
+   ("work-count", boost::program_options::value<size_t>(), "set work unit count");
 
    boost::program_options::variables_map vm;
    boost::program_options::store(
@@ -253,7 +257,7 @@ int main(int argc, char* argv[])
    thread_pool pool(vm["pool-size"].as<size_t>());
 
    // run producer
-   pool.run_task(producer_t(the_queue));
+   pool.run_task(producer_t(the_queue, vm["work-count"].as<size_t>()));
 
    // wait a bit for producer to generate tasks
    boost::this_thread::sleep(boost::posix_time::seconds(5));
