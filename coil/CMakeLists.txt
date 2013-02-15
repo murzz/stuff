@@ -1,0 +1,6 @@
+cmake_minimum_required(VERSION 2.8)
+project(coil)
+find_package(Boost COMPONENTS program_options REQUIRED)
+add_executable(coil src/coil.cpp)
+target_link_libraries(coil ${Boost_LIBRARIES})
+ADD_DEFINITIONS("-std=c++0x -std=c++11")
