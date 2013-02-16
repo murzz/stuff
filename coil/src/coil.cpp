@@ -1,12 +1,12 @@
 //#include <iostream>
 #include <cstdlib>
 
-#include "params.hpp"
+#include "board.hpp"
 
 int main(int argc, char** argv)
 {
-
     board board;
+
     try
     {
         parse(board, argc, argv);
@@ -16,8 +16,8 @@ int main(int argc, char** argv)
         return EXIT_SUCCESS;
     }
 
-    std::copy(board.board_.begin(), board.board_.end(),
-            std::ostream_iterator<board::square_type>(std::cout));
+//std::copy(board.board_.begin(), board.board_.end(),
+  //          std::ostream_iterator<board::square_type>(std::cout));
 
     return EXIT_SUCCESS;
 }
