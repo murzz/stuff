@@ -2,6 +2,8 @@
 #include <cstdlib>
 
 #include "board.hpp"
+#include "parser.hpp"
+#include "solver.hpp"
 
 int main(int argc, char** argv)
 {
@@ -19,5 +21,6 @@ int main(int argc, char** argv)
 //std::copy(board.board_.begin(), board.board_.end(),
   //          std::ostream_iterator<board::square_type>(std::cout));
 
+    solve(board);
     return EXIT_SUCCESS;
 }
