@@ -44,7 +44,7 @@ fwstring=$(echo $fwstring | sed -e "s/\"//g")
 
 # separate parameters with space instead of ampersand
 #fwstring=$(echo $fwstring | tr -d "\"")
-fwstring=$(echo $fwstring | sed -e "s/&/ /g")
+#fwstring=$(echo $fwstring | sed -e "s/&/ /g")
 
 # parse level
 level=$(grep "$level_line_begin" <$doc)
@@ -52,8 +52,8 @@ level=$(echo $level | sed -e "s/$level_line_begin//g" | sed -e "s/$level_line_en
 #echo $level
 
 # return result
-echo $fwstring>$level
+echo "$fwstring" | tr "&" "\n">$level
 
 # run coil
-./coil $level
+./coil --file=$level
 

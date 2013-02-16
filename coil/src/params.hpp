@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #include <boost/program_options.hpp>
 
@@ -17,6 +18,7 @@ struct board
     } square_type;
     typedef std::vector<square_type> type;
     type board_;
+    std::string board_str_;
 };
 
 //std::istream& operator>>(std::istream& in, board::square_type& square)
@@ -43,30 +45,61 @@ struct board
 //    return in;
 //}
 
+class exit_with_success: public std::exception
+{
+//public:
+    //help_printed
+};
+
 void parse(board& board, int argc, char** argv)
 {
     namespace po = boost::program_options;
-    std::string board_str;
-    po::options_description desc("Allowed options");
-    desc.add_options()
+
+    // define options
+    std::string config_file_name;
+    po::options_description general_options("General options");
+    general_options.add_options()
     ("help,h", "produce help message")
-    ("width,x", po::value<size_t>(&board.x_)->required(), "set board width")
-    ("height,y", po::value<size_t>(&board.y_)->required(), "set board height")
+    ("version,v", "print program version")
+    ("file,f", po::value<std::string>(&config_file_name),
+            "read board configuration from file");
 
-    ("board,board",
-            po::value<std::string>(&board_str)->required(),
-            "defines board itself")
-
-//    ("board,board",
-//            po::value<board::type>(&board.board_)->multitoken()->required(),
-//            "defines board itself")
-            ;
+    po::options_description board_options("Board options");
+    board_options.add_options()
+    ("x,width", po::value<size_t>(&board.x_)->required(), "set board width")
+    ("y,height", po::value<size_t>(&board.y_)->required(), "set board height")
+    ("board,b", po::value<std::string>(&board.board_str_)->required(),
+            "defines board itself as a vector of 'X's and '.'s");
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::store(po::parse_command_line(argc, argv, general_options), vm);
+
+    if (vm.empty() || vm.count("help"))
+    {
+        std::cout << general_options << board_options << std::endl;
+        throw exit_with_success();
+    }
+
+    if (vm.count("version"))
+    {
+        //TODO: implement version
+        std::cout << "version not implemented" << std::endl;
+        throw exit_with_success();
+    }
+
+    // read from file
+    if (vm.count("file"))
+    {
+        po::notify(vm);
+        std::cout << "reading board from file '" << config_file_name << "'"
+                << std::endl;
+        po::store(po::parse_config_file<std::string::value_type>
+                (config_file_name.c_str(), board_options), vm);
+    }
+
     po::notify(vm);
 
-    for (const std::string::value_type& square_str : board_str)
+    for (const std::string::value_type& square_str : board.board_str_)
     {
         board::square_type square = static_cast<board::square_type>(square_str);
         switch (square)
@@ -77,7 +110,8 @@ void parse(board& board, int argc, char** argv)
             break;
         default:
             throw boost::program_options::validation_error(
-                    boost::program_options::validation_error::invalid_option_value,"board",board_str);
+                    boost::program_options::validation_error::invalid_option_value,
+                    "board", board.board_str_);
         }
     }
 
