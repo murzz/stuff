@@ -61,7 +61,7 @@ BOOST_FIXTURE_TEST_CASE( file_option_test1, test::board )
 BOOST_FIXTURE_TEST_CASE( file_option_test2, test::board )
 {
    std::array<char const*, 2> argv =
-         { "program_name", "-f nosuchfile" };
+         { "program_name", "-fnosuchfile" };
 
    BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
          std::logic_error);
@@ -70,72 +70,59 @@ BOOST_FIXTURE_TEST_CASE( file_option_test2, test::board )
 BOOST_FIXTURE_TEST_CASE( file_option_test3, test::board )
 {
    std::array<char const*, 2> argv =
-         { "program_name", "-f /etc/passwd" };
+         { "program_name", "--file=/etc/passwd" };
 
    BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
          std::logic_error);
+}
+
+BOOST_FIXTURE_TEST_CASE( file_option_test4, test::board )
+{
+   std::array<char const*, 2> argv =
+         { "program_name", "--file=/tmp/coil/2" };
+
+   BOOST_REQUIRE_NO_THROW(parse(argv.size(), argv.data(), x_, y_, squares_));
+
+   BOOST_REQUIRE_EQUAL(x_, 5);
+   BOOST_REQUIRE_EQUAL(y_, 3);
+   BOOST_REQUIRE_EQUAL(squares_, "......X......X.");
 }
 
 BOOST_FIXTURE_TEST_CASE( board_options_test1, test::board )
 {
    std::array<char const*, 2> argv =
-         { "program_name", "-x" };
+         { "program_name", "--x=1" };
    BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
-         std::logic_error);
+         board_not_parsed);
 }
 
 BOOST_FIXTURE_TEST_CASE( board_options_test2, test::board )
 {
    std::array<char const*, 2> argv =
-         { "program_name", "-y" };
+         { "program_name", "--y=1" };
    BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
-         std::logic_error);
+         board_not_parsed);
 }
 
 BOOST_FIXTURE_TEST_CASE( board_options_test3, test::board )
 {
    std::array<char const*, 2> argv =
-         { "program_name", "-b" };
+         { "program_name", "--board=1" };
    BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
-         std::logic_error);
+         board_not_parsed);
 }
 
 BOOST_FIXTURE_TEST_CASE( board_options_test4, test::board )
 {
    std::array<char const*, 3> argv =
-         { "program_name", "-x", "-y" };
+         { "program_name", "--x=1", "--y=1" };
    BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
-         std::logic_error);
+         board_not_parsed);
 }
 
 BOOST_FIXTURE_TEST_CASE( board_options_test5, test::board )
 {
    std::array<char const*, 4> argv =
-         { "program_name", "-x", "-y", "-b" };
-   BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
-         std::logic_error);
-}
-
-BOOST_FIXTURE_TEST_CASE( board_options_test6, test::board )
-{
-   std::array<char const*, 4> argv =
-         { "program_name", "-x1", "-y", "-b" };
-   BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
-         std::logic_error);
-}
-
-BOOST_FIXTURE_TEST_CASE( board_options_test7, test::board )
-{
-   std::array<char const*, 4> argv =
-         { "program_name", "-x1", "-y1", "-b" };
-   BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x_, y_, squares_),
-         std::logic_error);
-}
-
-BOOST_FIXTURE_TEST_CASE( board_options_test8, test::board )
-{
-   std::array<char const*, 4> argv =
-         { "program_name", "-x1", "-y1", "-b1" };
+         { "program_name", "--x=1", "--y=1", "--board=1" };
    BOOST_REQUIRE_NO_THROW(parse(argv.size(), argv.data(), x_, y_, squares_));
 }
-

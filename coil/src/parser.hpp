@@ -42,17 +42,14 @@ void parse(const int& argc, const char * const * argv, size_t& x, size_t& y,
 
     po::options_description board_options("Board options");
     board_options.add_options()
-    ("width,x", po::value<size_t>(&x), "set board width")
-    ("height,y", po::value<size_t>(&y), "set board height")
-    ("board,b", po::value<std::string>(&squares),
+    ("x", po::value<size_t>(&x), "set board width")
+    ("y", po::value<size_t>(&y), "set board height")
+    ("board", po::value<std::string>(&squares),
             "defines board itself as a vector of 'X's and '.'s");
 
     // put options together
     po::options_description cmdline_options;
     cmdline_options.add(general_options).add(board_options);
-
-    po::options_description config_file_options;
-    config_file_options.add(board_options);
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
@@ -75,7 +72,11 @@ void parse(const int& argc, const char * const * argv, size_t& x, size_t& y,
     {
 
         po::notify(vm);
-        ///std::cout << "reading board from file '" << config_file_name << "'" << std::endl;
+        vm.clear();
+        std::cout << "reading board from file '" << config_file_name << "'" << std::endl;
+
+        po::options_description config_file_options;
+        config_file_options.add(board_options);
         po::store(po::parse_config_file<std::string::value_type>
                 (config_file_name.c_str(), config_file_options), vm);
     }
@@ -83,7 +84,7 @@ void parse(const int& argc, const char * const * argv, size_t& x, size_t& y,
     po::notify(vm);
 
     // board should be defined here via cmd line or config file
-    if (!(vm.count("width") && vm.count("height") && vm.count("board")))
+    if (!(vm.count("x") && vm.count("y") && vm.count("board")))
     {
         throw board_not_parsed();
     }
