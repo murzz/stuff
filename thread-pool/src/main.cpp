@@ -6,7 +6,6 @@
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
-#include <boost/foreach.hpp>
 #include <boost/random.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/program_options.hpp>
@@ -16,321 +15,260 @@
 class thread_pool
 {
 private:
-    boost::asio::io_service io_service_;
-    boost::asio::io_service::work work_;
-    boost::thread_group threads_;
-    std::size_t available_;
-    boost::mutex mutex_;
-public:
+   boost::asio::io_service io_service_;
+   boost::asio::io_service::work work_;
+   boost::thread_group threads_;
+   std::size_t available_;
+   boost::mutex mutex_;
+   public:
 
-    /// @brief Constructor.
-    thread_pool(std::size_t pool_size) :
-            work_(io_service_), available_(pool_size)
-    {
-        DLOG(INFO)<< __func__;
-        for (std::size_t idx = 0; idx < pool_size; ++idx)
-        {
+   /// @brief Constructor.
+   thread_pool(std::size_t pool_size) :
+         work_(io_service_), available_(pool_size)
+   {
+      DLOG(INFO)<< __func__;
+      for (std::size_t idx = 0; idx < pool_size; ++idx)
+      {
+         threads_.create_thread( boost::bind(&boost::asio::io_service::run, boost::ref(io_service_)));
+      }
+   }
 
-            threads_.create_thread(
-                    boost::bind(&boost::asio::io_service::run, &io_service_));
-            DLOG(INFO) << "thread #" << idx << " created";
-        }
-    }
+   /// @brief Destructor.
+   ~thread_pool()
+   {
+      DLOG(INFO) << __func__;
+      // Force all threads to return from io_service::run().
+      io_service_.stop();
 
-    /// @brief Destructor.
-    ~thread_pool()
-    {
-        DLOG(INFO) << __func__;
-        // Force all threads to return from io_service::run().
-        io_service_.stop();
+      // Suppress all exceptions.
+      try
+      {
+         threads_.join_all();
+      }
+      catch (...)
+      {
+         LOG(ERROR) << "thrown in join_all";
+      }
+   }
 
-        // Suppress all exceptions.
-        try
-        {
-            threads_.join_all();
-        }
-        catch (...)
-        {
-            LOG(ERROR) << "thrown in join_all";
-        }
-    }
+   /// @brief Adds a task to the thread pool if a thread is currently available.
+   template<typename Task>
+   void run_task(Task task)
+   {
+      boost::unique_lock<boost::mutex> lock(mutex_);
 
-    /// @brief Adds a task to the thread pool if a thread is currently available.
-    template<typename Task>
-    void run_task(Task task)
-    {
-        boost::unique_lock<boost::mutex> lock(mutex_);
+      // If no threads are available, then return.
+      if (0 == available_)
+      {
+         LOG(WARNING) << "no room inda pool";
+         return;
+      }
 
-        // If no threads are available, then return.
-        if (0 == available_)
-        {
-            LOG(WARNING) << "no room inda pool";
-            return;
-        }
+      // Decrement count, indicating thread is no longer available.
+      --available_;
 
-        // Decrement count, indicating thread is no longer available.
-        --available_;
+      // Post a wrapped task into the queue.
+      io_service_.post(
+            boost::bind(&thread_pool::wrap_task, this,
+                  boost::function<void()>(task)));
+   }
 
-        // Post a wrapped task into the queue.
-        io_service_.post(
-                boost::bind(&thread_pool::wrap_task, this,
-                        boost::function<void()>(task)));
-    }
-
-    const size_t& available()
-    {
-        boost::unique_lock<boost::mutex> lock(mutex_);
-        return available_;
-    }
+   const size_t& available()
+   {
+      boost::unique_lock<boost::mutex> lock(mutex_);
+      return available_;
+   }
 
 private:
-    /// @brief Wrap a task so that the available count can be increased once
-    ///        the user provided task has completed.
-    void wrap_task(boost::function<void()> task)
-    {
-        // Run the user supplied task.
-        try
-        {
-           // DLOG(INFO) << "task started";
-            task();
-            //DLOG(INFO) << "task finished";
-        }
-        // Suppress all exceptions.
-        catch (...)
-        {
-            LOG(ERROR) << "thrown in task";
-        }
+   /// @brief Wrap a task so that the available count can be increased once
+   ///        the user provided task has completed.
+   void wrap_task(boost::function<void()> task)
+   {
+      // Run the user supplied task.
+      try
+      {
+         // DLOG(INFO) << "task started";
+         task();
+         //DLOG(INFO) << "task finished";
+      }
+      // Suppress all exceptions.
+      catch (...)
+      {
+         LOG(ERROR) << "thrown in task";
+      }
 
-        // Task has finished, so increment count of available threads.
-        boost::unique_lock<boost::mutex> lock(mutex_);
-        ++available_;
-    }
+      // Task has finished, so increment count of available threads.
+      boost::unique_lock<boost::mutex> lock(mutex_);
+      ++available_;
+   }
 };
 
 void work()
 {
-    LOG(INFO)<< __func__;
+   LOG(INFO)<< __func__;
 }
 
-struct worker//:boost::noncopyable
+struct worker    //:boost::noncopyable
 {
-    worker() :
-            done_(false)
-    {
-    }
-    ~worker()
-    {
-       // LOG_IF(WARNING, !done_) << "work was not done";
-       // LOG_IF(INFO, done_) << "work was done";
-    }
-    void operator()()
-    {
-        LOG(INFO)<< boost::this_thread::get_id() <<" work in progress";
+   worker() :
+         done_(false)
+   {
+   }
+   ~worker()
+   {
+      // LOG_IF(WARNING, !done_) << "work was not done";
+      // LOG_IF(INFO, done_) << "work was done";
+   }
+   void operator()()
+   {
+      LOG(INFO)<< "[" << boost::this_thread::get_id() <<"] work in progress";
 
-        boost::random::mt19937 rng;
-        boost::random::uniform_int_distribution<> rnd(1,10);
+      boost::random::mt19937 rng;
+      boost::random::uniform_int_distribution<> rnd(1,10);
 
-        boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
-        done_=true;
-        LOG(INFO)<< boost::this_thread::get_id() <<" work done";
-    }
-    bool done_;
+      boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
+      done_=true;
+      LOG(INFO)<< "[" << boost::this_thread::get_id() <<"] work done";
+   }
+   bool done_;
 };
 
 void more_work(int)
 {
-    LOG(INFO)<< __func__;
+   LOG(INFO)<< __func__;
 }
 
 template<class container>
 class queue
 {
 public:
-    typedef typename container::value_type value_t;
-    void push(const value_t& value)
-    {
-        boost::unique_lock<boost::mutex> lock(mutex_);
-        container_.push_back(value);
-    }
-    
-    typename container::size_type size()
-    {
-    boost::unique_lock<boost::mutex> lock(mutex_);
-    //std::cout << container_.size() << std::endl;
-    return container_.size();
+   typedef typename container::value_type value_t;
+   void push(const value_t& value)
+   {
+      boost::unique_lock<boost::mutex> lock(mutex_);
+      container_.push_back(value);
+      LOG(INFO)<< "work pushed";
    }
 
-    value_t pop()
-    {
-        boost::unique_lock<boost::mutex> lock(mutex_);
-        value_t item = container_.front();
-        container_.pop_front();
-        return item;
-    }
+   typename container::size_type size()
+   {
+      boost::unique_lock<boost::mutex> lock(mutex_);
+      return container_.size();
+   }
+
+   value_t pop()
+   {
+      boost::unique_lock<boost::mutex> lock(mutex_);
+      value_t item = container_.front();
+      container_.pop_front();
+      LOG(INFO)<< "work popped";
+      return item;
+   }
 private:
-    container container_;
-    boost::mutex mutex_;
+   container container_;
+   boost::mutex mutex_;
 };
 
 template<class queue, class worker>
 struct producer
 {
-    queue& queue_;
-    producer(queue& value) :
-            queue_(value)
-    {
+   queue& queue_;
+   size_t work_count_;
+   producer(queue& value, const size_t& work_count) :
+         queue_(value), work_count_(work_count)
+   {
 
-    }
-    void operator()()
-    {
-        boost::random::mt19937 rng;
-        boost::random::uniform_int_distribution<> rnd(1, 2);
+   }
+   void operator()()
+   {
+      boost::random::mt19937 rng;
+      boost::random::uniform_int_distribution<> rnd(1, 2);
 
-        for (int idx = 10;idx; --idx/*, boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)))*/)
-        {
-        worker wrk;
-        //LOG(INFO) << "+";
-            queue_.push(wrk);
-        }
-        DLOG(INFO)<<"producer done";
-    }
+      for (size_t idx = work_count_; idx;
+            --idx/*, boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)))*/)
+      {
+         worker wrk;
+         queue_.push(wrk);
+      }
+   }
 };
 
 template<class queue, class worker>
 struct consumer
 {
-    queue& queue_;
-    consumer(queue& value) :
-            queue_(value)
-    {
+   queue& queue_;
+   consumer(queue& value) :
+         queue_(value)
+   {
 
-    }
-    void operator()()
-    {
-    if (queue_.size())
-    {
-    worker wrk = queue_.pop();
-    wrk.operator()();
-    }
-    //LOG(INFO) << "-";
-    //queue_.pop().operator()();
-//        boost::random::mt19937 rng;
-//        boost::random::uniform_int_distribution<> rnd(1, 16);
-//
-//        for (;; boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng))))
-//        {
-//            queue_.push_back(worker());
-//        }
-    }
+   }
+   void operator()()
+   {
+      if (queue_.size())
+      {
+         worker wrk = queue_.pop();
+         wrk();
+      }
+   }
 };
 
 int main(int argc, char* argv[])
 {
+   // google
+   google::InitGoogleLogging(argv[0]);
+   google::InstallFailureSignalHandler();
 
-//prinimaj kak parametr razmer poola (GOptions ili boost::program_options)
-//sdelaj tak, 4tobi producer 4erez kakoe
-//ostanovisj kogda o4eredj pusta
-//proverj 4to 4em bolshe pool tem bistree obrabativaetsja o4ered
+   // defaults for program options
+   size_t pool_size = 2;
+   size_t work_count = 10;
 
-    google::InitGoogleLogging(argv[0]);
-    google::InstallFailureSignalHandler();
-    
-    namespace po = boost::program_options;
-    // Declare the supported options.
-po::options_description desc("Allowed options");
-desc.add_options()
-    ("help", "produce help message")
-    ("pool-size", po::value<size_t>(), "set pool size")
-;
+   // program options
+   boost::program_options::options_description desc("Allowed options");
+   desc.add_options()
+   ("help,h", "produce help message")
+   ("pool-size,s", boost::program_options::value<size_t>(&pool_size), "set pool size")
+   ("work-count,c", boost::program_options::value<size_t>(&work_count), "set work unit count");
 
-po::variables_map vm;
-po::store(po::parse_command_line(argc, argv, desc), vm);
-po::notify(vm);    
+   boost::program_options::variables_map vm;
+   boost::program_options::store(
+         boost::program_options::parse_command_line(argc, argv, desc), vm);
+   boost::program_options::notify(vm);
 
-if (vm.count("help")) {
-    std::cout << desc << std::endl;
-    return EXIT_FAILURE;
-}
+   if (vm.count("help"))
+   {
+      std::cout << desc << std::endl;
+      return EXIT_FAILURE;
+   }
 
-if (vm.count("pool-size")) {
-    LOG(INFO) << "pool size set to " 
- << vm["pool-size"].as<size_t>();
-} else {
-    std::cout << desc << std::endl;
-    return EXIT_FAILURE;
+   LOG(INFO)<< "pool size is " << pool_size;
+   LOG(INFO)<< "work unit count is " << work_count;
 
-}
+   // work
+   typedef queue<std::deque<worker> > queue_t;
+   //typedef queue<std::queue<worker> > queue_t;
+   queue_t the_queue;
 
-    typedef queue<std::deque<worker> > queue_t;
-    //typedef queue<std::queue<worker> > queue_t;
-    queue_t the_queue;
+   typedef producer<queue_t, worker> producer_t;
+   typedef consumer<queue_t, worker> consumer_t;
 
-    typedef producer<queue_t, worker> producer_t;
-    //producer_t the_producer(the_queue);
+   thread_pool pool(pool_size);
 
-    typedef consumer<queue_t, worker> consumer_t;
-    //producer_t the_consumer(the_queue);
+   // run producer
+   pool.run_task(producer_t(the_queue, work_count));
 
-    //enum
-    //{
-    //    MAX_POOL_SIZE = 8
-    //};
-    //thread_pool pool(MAX_POOL_SIZE);
-        thread_pool pool(vm["pool-size"].as<size_t>());
-    
+   // wait a bit for producer to generate tasks
+   boost::this_thread::sleep(boost::posix_time::seconds(1));
 
-pool.run_task(producer_t(the_queue));
-// sleep until 1st queue item generated
+   // consume tasks until queue is empty
+   for (; the_queue.size();
+         boost::this_thread::sleep(boost::posix_time::seconds(1)))
+   {
+      LOG(INFO)<< "queue size: " << the_queue.size() << ", pool available: " << pool.available();
+      if(pool.available())
+      {
+         pool.run_task(consumer_t(the_queue));
+      }
+   }
 
-//for(;!the_queue.size();)
-//{
-boost::this_thread::sleep(boost::posix_time::seconds(5));
-//}
-        for (; the_queue.size();
-                boost::this_thread::sleep(boost::posix_time::seconds(1)))
-        {
-        LOG(INFO) << "queue size: " << the_queue.size() << ", pool available: " << pool.available();
-        if(pool.available())
-        {
-        pool.run_task(consumer_t(the_queue));
-        }
-        
-        
-
-}
-
-//    typedef boost::shared_ptr<worker> worker_ptr_t;
-//    std::set<worker_ptr_t> workers;
-//    for (size_t idx = 10; idx; --idx)
-//    {
-//        worker_ptr_t worker(new ::worker(idx));
-//        workers.insert(worker);
-//    }
-    //producer prod(pool);
-    //boost::thread producer(boost::bind(produce, boost::ref(pool)));
-
-    //  std::for_each(workers.begin(), workers.end(),
-    //      boost::bind(&thread_pool::run_task, &pool));
-    //pool.run_task(work);                        // Function pointer.
-    //pool.run_task(worker(1));                    // Callable object.
-    //pool.run_task(boost::bind(more_work, 5)); // Callable object.
-
-//    for (; workers.size();
-//            boost::this_thread::sleep(boost::posix_time::seconds(1)))
-//    {
-//        BOOST_FOREACH(worker_ptr_t worker, workers)
-//        {
-//            if (worker->done_)
-//            {
-//                //
-//            }
-//            else
-//            {
-//                pool.run_task(*worker);
-//            }
-//        }
-//        LOG(INFO)<< "free pool: " << pool.available();
-//    }
-
-    return EXIT_SUCCESS;
+   return EXIT_SUCCESS;
 }
