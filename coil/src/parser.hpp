@@ -12,7 +12,7 @@ class board_not_parsed: public std::exception
 };
 
 void parse(const int& argc, const char * const * argv, size_t& x, size_t& y,
-        std::string& board)
+        std::string& squares)
 {
     namespace po = boost::program_options;
 //    std::cout<<"argc="<<argc<<" argv=";
@@ -44,7 +44,7 @@ void parse(const int& argc, const char * const * argv, size_t& x, size_t& y,
     board_options.add_options()
     ("width,x", po::value<size_t>(&x), "set board width")
     ("height,y", po::value<size_t>(&y), "set board height")
-    ("board,b", po::value<std::string>(&board),
+    ("board,b", po::value<std::string>(&squares),
             "defines board itself as a vector of 'X's and '.'s");
 
     // put options together
