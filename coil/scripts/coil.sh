@@ -2,8 +2,8 @@
 
 # init
 url="http://www.hacker.org/coil/index.php"
-name="murzzz"
-pass="mAmuZ8fzgVYjavZ"
+name=""
+pass=""
 log="coil.log"
 doc="coil.html"
 flashvars="FlashVars=\""
