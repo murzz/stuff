@@ -126,3 +126,26 @@ BOOST_FIXTURE_TEST_CASE( board_options_test5, test::board )
          { "program_name", "--x=1", "--y=1", "--board=1" };
    BOOST_REQUIRE_NO_THROW(parse(argv.size(), argv.data(), x_, y_, squares_));
 }
+
+BOOST_FIXTURE_TEST_CASE( cmdline_and_board_options_test1, test::board )
+{
+   std::array<char const*, 5> argv =
+         { "program_name", "--file=/tmp/coil/2", "--x=2", "--y=1", "--board=X" };
+
+   BOOST_REQUIRE_NO_THROW(parse(argv.size(), argv.data(), x_, y_, squares_));
+   BOOST_REQUIRE_EQUAL(x_, 2);
+   BOOST_REQUIRE_EQUAL(y_, 1);
+   BOOST_REQUIRE_EQUAL(squares_, "X");
+}
+
+BOOST_FIXTURE_TEST_CASE( cmdline_and_board_options_test2, test::board )
+{
+   std::array<char const*, 3> argv =
+         { "program_name", "--file=/tmp/coil/2", "--board=X" };
+
+   BOOST_REQUIRE_NO_THROW(parse(argv.size(), argv.data(), x_, y_, squares_));
+   BOOST_REQUIRE_EQUAL(x_, 5);
+   BOOST_REQUIRE_EQUAL(y_, 3);
+   BOOST_REQUIRE_EQUAL(squares_, "X");
+}
+

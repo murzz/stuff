@@ -15,23 +15,8 @@ void parse(const int& argc, const char * const * argv, size_t& x, size_t& y,
         std::string& squares)
 {
     namespace po = boost::program_options;
-//    std::cout<<"argc="<<argc<<" argv=";
-//
-//    for(size_t idx = 0; idx < argc; ++idx)
-//    {
-//        std::cout<<argv[idx] << ' ';
-//    }
 
-//    po::options_description cmdline_options;
-//    cmdline_options.add(generic).add(config).add(hidden);
-//
-//    po::options_description config_file_options;
-//    config_file_options.add(config).add(hidden);
-//
-//    po::options_description visible("Allowed options");
-//    visible.add(generic).add(config);
-
-// define options
+    // define options
     std::string config_file_name;
     po::options_description general_options("General options");
     general_options.add_options()
@@ -72,7 +57,6 @@ void parse(const int& argc, const char * const * argv, size_t& x, size_t& y,
     {
 
         po::notify(vm);
-        vm.clear();
         std::cout << "reading board from file '" << config_file_name << "'" << std::endl;
 
         po::options_description config_file_options;
