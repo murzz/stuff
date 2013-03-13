@@ -5,71 +5,80 @@
 #include <stdexcept>
 #include <algorithm>
 
-struct board
+class board
 {
-    size_t x_;
-    size_t y_;
 
-    typedef enum square_type_tag
-    {
-        empty = '.',
-        wall = 'X'
-    } square_type;
-    typedef std::vector<square_type> type;
-    type board_;
-    std::string str_;
+public:
 
-    board(const size_t& x, const size_t& y, const std::string& str)
-    {
-        // check board size
-        if (x * y != str.size())
-        {
-            throw std::runtime_error("board size mismatch");
-        }
+   class squares
+   {
 
-        //convert board from str to enum
+   public:
 
-        //std::for_each(str.begin(), str.end(), [](const std::string::value_type& square_str)
-        for (const std::string::value_type& square_str : str)
-        {
-            board::square_type square =
-                    static_cast<board::square_type>(square_str);
+      enum class square
+      {
+         empty = '.',
+         wall = 'X'
+      };
+      typedef std::vector<square> type;
+
+      squares()
+      {
+
+      }
+
+      squares(const std::string& squares)
+      {
+         *this = squares;
+      }
+
+      squares& operator=(const std::string& squares)
+      {
+         value_.clear();
+
+         //std::for_each(squares.begin(), squares.end(), [](const std::string::value_type& square_str)
+         for (const auto& square_str : squares)
+         {
+            square square = static_cast<squares::square>(square_str);
             switch (square)
             {
-            case board::empty:
-                case board::wall:
-                board_.push_back(square);
-                break;
-            default:
-                throw std::runtime_error("wrong square");
+               case square::empty:
+                  case square::wall:
+                  value_.push_back(square);
+               break;
+               default:
+                  throw std::runtime_error("wrong square");
             }
-        }
-        //);
+         }
+         // );
 
-        x_ = x;
-        y_ = y;
-        str_ = str;
-    }
+         return *this;
+      }
 
-//    board& operator=(const board& rhs)
-//    {
-//        if (this == &rhs)
-//        {
-//            return *this;
-//        }
-//        x_ = rhs.x_;
-////TODO: so on, and do not throw
-//        return *this;
-//    }
+      type& value()
+      {
+         return value_;
+      }
 
-//    bool operator==(const board& rhs)
-//    {
-//        return true;
-//    }
+   private:
+      type value_;
+   };
 
-//    friend std::ostream& operator<<(std::ostream& stream, const board& rhs)
-//    {
-//        return stream;
-//    }
+   board(const size_t& x, const size_t& y, const std::string& squares)
+   {
+      // check board size
+      if (x * y != squares.size())
+      {
+         throw std::logic_error("board size mismatch");
+      }
 
+      x_ = x;
+      y_ = y;
+      squares_ = squares;
+   }
+
+private:
+   size_t x_;
+   size_t y_;
+   squares squares_;
 };
