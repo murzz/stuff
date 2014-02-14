@@ -12,19 +12,37 @@
 
 #include <glog/logging.h>
 
+void log_exception(const char* caller)
+{
+   try
+   {
+      throw;
+   }
+   catch (const std::exception& e)
+   {
+      LOG(ERROR)<< "exception in "<<caller<<": "<<e.what();
+   }
+   catch(...)
+   {
+      LOG(ERROR) << "unexpected exception in "<<caller;
+   }
+}
+
+#define LOG_EXCEPTION() {log_exception(__func__);}
+
 class thread_pool
 {
 private:
    boost::asio::io_service io_service_;
    boost::asio::io_service::work work_;
    boost::thread_group threads_;
-   std::size_t available_;
+   std::size_t threads_available_;
    boost::mutex mutex_;
-   public:
 
-   /// @brief Constructor.
+public:
+
    thread_pool(std::size_t pool_size) :
-         work_(io_service_), available_(pool_size)
+         work_(io_service_), threads_available_(pool_size)
    {
       DLOG(INFO)<< __func__;
       for (std::size_t idx = 0; idx < pool_size; ++idx)
@@ -33,7 +51,6 @@ private:
       }
    }
 
-   /// @brief Destructor.
    ~thread_pool()
    {
       DLOG(INFO) << __func__;
@@ -47,7 +64,7 @@ private:
       }
       catch (...)
       {
-         LOG(ERROR) << "thrown in join_all";
+          LOG_EXCEPTION();
       }
    }
 
@@ -58,14 +75,14 @@ private:
       boost::unique_lock<boost::mutex> lock(mutex_);
 
       // If no threads are available, then return.
-      if (0 == available_)
+      if (0 == threads_available_)
       {
          LOG(WARNING) << "no room inda pool";
          return;
       }
 
       // Decrement count, indicating thread is no longer available.
-      --available_;
+      --threads_available_;
 
       // Post a wrapped task into the queue.
       io_service_.post(
@@ -76,7 +93,7 @@ private:
    const size_t& available()
    {
       boost::unique_lock<boost::mutex> lock(mutex_);
-      return available_;
+      return threads_available_;
    }
 
 private:
@@ -94,12 +111,12 @@ private:
       // Suppress all exceptions.
       catch (...)
       {
-         LOG(ERROR) << "thrown in task";
+          LOG_EXCEPTION();
       }
 
       // Task has finished, so increment count of available threads.
       boost::unique_lock<boost::mutex> lock(mutex_);
-      ++available_;
+      ++threads_available_;
    }
 };
 
