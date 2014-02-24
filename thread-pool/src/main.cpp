@@ -37,18 +37,29 @@ private:
    boost::asio::io_service::work work_;
    boost::thread_group threads_;
    std::size_t threads_available_;
-   boost::mutex mutex_;
+   boost::asio::signal_set signals_;
+
+   typedef boost::unique_lock<boost::mutex> lock_t;
+   typedef lock_t::mutex_type mutex_;
 
 public:
 
+   boost::asio::io_service& get_io_service()
+   {
+      return io_service_;
+   }
+
    thread_pool(std::size_t pool_size) :
-         work_(io_service_), threads_available_(pool_size)
+         work_(io_service_), threads_available_(pool_size),
+               signals_(io_service_, SIGINT, SIGTERM)
    {
       DLOG(INFO)<< __func__;
       for (std::size_t idx = 0; idx < pool_size; ++idx)
       {
          threads_.create_thread( boost::bind(&boost::asio::io_service::run, boost::ref(io_service_)));
       }
+
+      signals_.async_wait( boost::bind(&boost::asio::io_service::stop, &io_service_));
    }
 
    ~thread_pool()
@@ -64,7 +75,7 @@ public:
       }
       catch (...)
       {
-          LOG_EXCEPTION();
+         LOG_EXCEPTION();
       }
    }
 
@@ -72,50 +83,42 @@ public:
    template<typename Task>
    void run_task(Task task)
    {
-      boost::unique_lock<boost::mutex> lock(mutex_);
-
-      // If no threads are available, then return.
-      if (0 == threads_available_)
-      {
-         LOG(WARNING) << "no room inda pool";
-         return;
-      }
-
-      // Decrement count, indicating thread is no longer available.
+      lock_t lock(mutex_);
       --threads_available_;
 
       // Post a wrapped task into the queue.
       io_service_.post(
-            boost::bind(&thread_pool::wrap_task, this,
-                  boost::function<void()>(task)));
+            boost::bind(&thread_pool::wrap_task<Task>, this,task));
    }
 
    const size_t& available()
    {
-      boost::unique_lock<boost::mutex> lock(mutex_);
+      lock_t lock(mutex_);
       return threads_available_;
    }
 
 private:
    /// @brief Wrap a task so that the available count can be increased once
    ///        the user provided task has completed.
-   void wrap_task(boost::function<void()> task)
+   /// @note If we wont do anything smart here then this method is not needed, right?
+   template<typename Task>
+   void wrap_task(Task task)
    {
       // Run the user supplied task.
       try
       {
-         // DLOG(INFO) << "task started";
+         DLOG(INFO) << "task started";
          task();
-         //DLOG(INFO) << "task finished";
+         DLOG(INFO) << "task finished";
       }
       // Suppress all exceptions.
       catch (...)
       {
-          LOG_EXCEPTION();
+         LOG_EXCEPTION();
       }
 
       // Task has finished, so increment count of available threads.
-      boost::unique_lock<boost::mutex> lock(mutex_);
+      lock_t lock(mutex_);
       ++threads_available_;
    }
 };
@@ -138,14 +141,15 @@ struct worker    //:boost::noncopyable
    }
    void operator()()
    {
-      LOG(INFO)<< "[" << boost::this_thread::get_id() <<"] work in progress";
+      LOG(INFO)<<"--> starting work";
 
       boost::random::mt19937 rng;
-      boost::random::uniform_int_distribution<> rnd(1,10);
+      boost::random::uniform_int_distribution<> rnd(1,3);
 
+      // simulating hard work
       boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
       done_=true;
-      LOG(INFO)<< "[" << boost::this_thread::get_id() <<"] work done";
+      LOG(INFO)<<"<-- work done";
    }
    bool done_;
 };
@@ -159,66 +163,74 @@ template<class container>
 class queue
 {
 public:
-   typedef typename container::value_type value_t;
-   void push(const value_t& value)
+   typedef typename container::value_type worker_t;
+
+   void push(const worker_t& value)
    {
-      boost::unique_lock<boost::mutex> lock(mutex_);
+      lock_t lock(mutex_);
       container_.push_back(value);
-      LOG(INFO)<< "work pushed";
+      LOG(INFO)<<"work pushed, queue size is " << container_.size();
    }
 
    typename container::size_type size()
    {
-      boost::unique_lock<boost::mutex> lock(mutex_);
+      lock_t lock(mutex_);
       return container_.size();
    }
 
-   value_t pop()
+   worker_t pop()
    {
-      boost::unique_lock<boost::mutex> lock(mutex_);
-      value_t item = container_.front();
+      lock_t lock(mutex_);
+      worker_t item = container_.front();
       container_.pop_front();
-      LOG(INFO)<< "work popped";
+      LOG(INFO)<<"work popped, queue size is " << container_.size();
       return item;
    }
 private:
    container container_;
-   boost::mutex mutex_;
+   typedef boost::unique_lock<boost::mutex> lock_t;
+   lock_t::mutex_type mutex_;
 };
 
 template<class queue, class worker>
 struct producer
 {
+   //TODO how to get rid of it?
+   //typedef void result_type;
+   typedef queue queue_t;
+   typedef worker worker_t;
    queue& queue_;
-   size_t work_count_;
-   producer(queue& value, const size_t& work_count) :
-         queue_(value), work_count_(work_count)
+   producer(queue& value) :
+         queue_(value)
    {
-
    }
+
    void operator()()
    {
+      // simulate some random delay in generating more work
       boost::random::mt19937 rng;
       boost::random::uniform_int_distribution<> rnd(1, 2);
 
-      for (size_t idx = work_count_; idx;
-            --idx/*, boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)))*/)
-      {
-         worker wrk;
-         queue_.push(wrk);
-      }
+      // wait for randomness
+      boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
+
+      // push some work
+      worker work;
+      queue_.push(work);
    }
 };
 
 template<class queue, class worker>
 struct consumer
 {
+   typedef queue queue_t;
+   typedef worker worker_t;
    queue& queue_;
    consumer(queue& value) :
          queue_(value)
    {
-
    }
+
    void operator()()
    {
       if (queue_.size())
@@ -229,6 +241,42 @@ struct consumer
    }
 };
 
+//template <typename queue, typename worker>
+//void producer_task(boost::asio::io_service& _io_service, queue& _queue)
+//{
+//   boost::random::mt19937 rng;
+//   boost::random::uniform_int_distribution<> rnd(1, 2);
+//
+//   // wait for randomness
+//   boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
+//
+//   // push some work
+//   worker wrk;
+//   _queue.push(wrk);
+//}
+
+template<typename queue, typename worker, typename helper>
+struct async_wrapper
+{
+   typedef void result_type;
+   queue& queue_;
+   boost::asio::io_service& io_service_;
+   async_wrapper(queue& value, boost::asio::io_service& io_service) :
+         queue_(value), io_service_(io_service)
+   {
+   }
+
+   void operator()()
+   {
+      helper do_help(queue_);
+      do_help();
+
+      io_service_.post(
+            boost::bind(
+                  async_wrapper<queue, worker, helper>(queue_, io_service_)));
+   }
+};
+
 int main(int argc, char* argv[])
 {
    // google
@@ -236,15 +284,17 @@ int main(int argc, char* argv[])
    google::InstallFailureSignalHandler();
 
    // defaults for program options
-   size_t pool_size = 2;
-   size_t work_count = 10;
+   const size_t defalt_pool_size = 2;
+   size_t pool_size =
+         boost::thread::hardware_concurrency() ?
+               boost::thread::hardware_concurrency() : defalt_pool_size;
 
    // program options
    boost::program_options::options_description desc("Allowed options");
    desc.add_options()
    ("help,h", "produce help message")
-   ("pool-size,s", boost::program_options::value<size_t>(&pool_size), "set pool size")
-   ("work-count,c", boost::program_options::value<size_t>(&work_count), "set work unit count");
+   ("pool-size,s", boost::program_options::value<size_t>(&pool_size),
+         "set pool size");
 
    boost::program_options::variables_map vm;
    boost::program_options::store(
@@ -258,34 +308,28 @@ int main(int argc, char* argv[])
    }
 
    LOG(INFO)<< "pool size is " << pool_size;
-   LOG(INFO)<< "work unit count is " << work_count;
 
-   // work
+   // defines
    typedef queue<std::deque<worker> > queue_t;
    //typedef queue<std::queue<worker> > queue_t;
+
+   typedef producer<queue_t, queue_t::worker_t> producer_t;
+   typedef async_wrapper<producer_t::queue_t, producer_t::worker_t, producer_t> async_producer_t;
+
+   typedef consumer<queue_t, queue_t::worker_t> consumer_t;
+   typedef async_wrapper<consumer_t::queue_t, consumer_t::worker_t, consumer_t> async_consumer_t;
+
+   // declarations
+   thread_pool pool(pool_size);
    queue_t the_queue;
 
-   typedef producer<queue_t, worker> producer_t;
-   typedef consumer<queue_t, worker> consumer_t;
+   // producing work
+   pool.run_task(async_producer_t(the_queue, pool.get_io_service()));
+   // consuming work
+   pool.run_task(async_consumer_t(the_queue, pool.get_io_service()));
 
-   thread_pool pool(pool_size);
-
-   // run producer
-   pool.run_task(producer_t(the_queue, work_count));
-
-   // wait a bit for producer to generate tasks
-   boost::this_thread::sleep(boost::posix_time::seconds(1));
-
-   // consume tasks until queue is empty
-   for (; the_queue.size();
-         boost::this_thread::sleep(boost::posix_time::seconds(1)))
-   {
-      LOG(INFO)<< "queue size: " << the_queue.size() << ", pool available: " << pool.available();
-      if(pool.available())
-      {
-         pool.run_task(consumer_t(the_queue));
-      }
-   }
+   // this thread will also work for us!
+   pool.get_io_service().run();
 
    return EXIT_SUCCESS;
 }
