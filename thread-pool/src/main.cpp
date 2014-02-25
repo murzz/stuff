@@ -30,6 +30,58 @@ void log_exception(const char* caller)
 
 #define LOG_EXCEPTION() {log_exception(__func__);}
 
+class thread_pool
+{
+private:
+   boost::asio::io_service io_service_;
+   boost::asio::io_service::work work_;
+   boost::thread_group threads_;
+   boost::asio::signal_set signals_;
+
+public:
+
+   boost::asio::io_service& get_io_service()
+   {
+      return io_service_;
+   }
+
+   thread_pool(std::size_t pool_size) :
+      work_(io_service_), signals_(io_service_, SIGINT, SIGTERM)
+   {
+      DLOG(INFO)<< __func__;
+      for (std::size_t idx = 0; idx < pool_size; ++idx)
+      {
+         threads_.create_thread( boost::bind(&boost::asio::io_service::run, boost::ref(io_service_)));
+      }
+
+      signals_.async_wait( boost::bind(&boost::asio::io_service::stop, &io_service_));
+   }
+
+   ~thread_pool()
+   {
+      DLOG(INFO) << "stopping service...";
+      // Force all threads to return from io_service::run().
+      io_service_.stop();
+
+      DLOG(INFO) << "joining threads...";
+      try
+      {
+         threads_.join_all();
+      }
+      catch (...)
+      {
+         LOG_EXCEPTION();
+      }
+      DLOG(INFO) << __func__;
+   }
+
+   template<typename Task>
+   void run_task(Task task)
+   {
+      io_service_.post( boost::bind(task));
+   }
+};
+
 template<class container>
 class queue
 {
@@ -67,6 +119,7 @@ public:
       LOG(INFO)<<"work popped, queue size is " << container_.size();
       return item;
    }
+
 private:
    container container_;
    typedef boost::unique_lock<boost::mutex> lock_t;
@@ -99,109 +152,6 @@ struct worker    //:boost::noncopyable
       LOG(INFO)<<"<-- work done";
    }
    bool done_;
-};
-
-class thread_pool
-{
-private:
-   boost::asio::io_service io_service_;
-   boost::asio::io_service::work work_;
-   boost::thread_group threads_;
-   std::size_t threads_available_;
-   boost::asio::signal_set signals_;
-
-   typedef boost::unique_lock<boost::mutex> lock_t;
-   typedef lock_t::mutex_type mutex_;
-
-public:
-
-   typedef queue<std::deque<worker> > queue_t;
-
-   boost::asio::io_service& get_io_service()
-   {
-      return io_service_;
-   }
-
-   queue_t& get_queue()
-   {
-      return queue_;
-   }
-
-   thread_pool(std::size_t pool_size) :
-      work_(io_service_), threads_available_(pool_size),
-         signals_(io_service_, SIGINT, SIGTERM)
-   {
-      DLOG(INFO)<< __func__;
-      for (std::size_t idx = 0; idx < pool_size; ++idx)
-      {
-         threads_.create_thread( boost::bind(&boost::asio::io_service::run, boost::ref(io_service_)));
-      }
-
-      signals_.async_wait( boost::bind(&boost::asio::io_service::stop, &io_service_));
-   }
-
-   ~thread_pool()
-   {
-      DLOG(INFO) << "stopping service...";
-      // Force all threads to return from io_service::run().
-      io_service_.stop();
-
-      DLOG(INFO) << "joining threads...";
-      try
-      {
-         threads_.join_all();
-      }
-      catch (...)
-      {
-         LOG_EXCEPTION();
-      }
-      DLOG(INFO) << __func__;
-   }
-
-   /// @brief Adds a task to the thread pool if a thread is currently available.
-   template<typename Task>
-   void run_task(Task task)
-   {
-      lock_t lock(mutex_);
-      --threads_available_;
-
-      // Post a wrapped task into the queue.
-      io_service_.post(
-         boost::bind(&thread_pool::wrap_task<Task>, this,task));
-   }
-
-   const size_t& available()
-   {
-      lock_t lock(mutex_);
-      return threads_available_;
-   }
-
-private:
-   /// @brief Wrap a task so that the available count can be increased once
-   ///        the user provided task has completed.
-   /// @note If we wont do anything smart here then this method is not needed, right?
-   template<typename Task>
-   void wrap_task(Task task)
-   {
-      // Run the user supplied task.
-      try
-      {
-         DLOG(INFO) << "task started";
-         task();
-         DLOG(INFO) << "task finished";
-      }
-      // Suppress all exceptions.
-      catch (...)
-      {
-         LOG_EXCEPTION();
-      }
-
-      // Task has finished, so increment count of available threads.
-      lock_t lock(mutex_);
-      ++threads_available_;
-   }
-
-   queue_t queue_;
 };
 
 //void work()
@@ -331,24 +281,28 @@ int main(int argc, char* argv[])
 
    LOG(INFO)<< "pool size is " << pool_size;
 
-   typedef async_wrapper<producer<thread_pool::queue_t> > async_producer_t;
-   typedef async_wrapper<consumer<thread_pool::queue_t> > async_consumer_t;
+   typedef queue<std::deque<worker> > queue_t;
+   typedef async_wrapper<producer<queue_t> > async_producer_t;
+   typedef async_wrapper<consumer<queue_t> > async_consumer_t;
 
-   thread_pool pool(pool_size);
-
-   // since consumer and producer would repost work after current work item is finished
-   // only 2 threads will work. now we create multiple guys for many threads to be busy.
-   for (size_t idx = pool_size; idx; --idx)
+   // pool needs to be destroyed before queue, otherwise some tasks could still use queue when it is already dead
+   queue_t queue;
    {
-      // producing work
-      pool.run_task(async_producer_t(pool.get_queue(), pool.get_io_service()));
-      // consuming work
-      pool.run_task(async_consumer_t(pool.get_queue(), pool.get_io_service()));
+      thread_pool pool(pool_size);
+
+      // since consumer and producer would repost work after current work item is finished
+      // only 2 threads will work. now we create multiple guys for many threads to be busy.
+      for (size_t idx = pool_size; idx; --idx)
+      {
+         // producing work
+         pool.run_task(async_producer_t(queue, pool.get_io_service()));
+         // consuming work
+         pool.run_task(async_consumer_t(queue, pool.get_io_service()));
+      }
+
+      // this thread will also work for us!
+      pool.get_io_service().run();
    }
-
-   // this thread will also work for us!
-   pool.get_io_service().run();
-
    LOG(INFO)<<"returned from run() in main thread";
 
    return EXIT_SUCCESS;
