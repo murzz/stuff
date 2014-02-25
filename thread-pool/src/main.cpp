@@ -193,13 +193,10 @@ private:
    lock_t::mutex_type mutex_;
 };
 
-template<class queue, class worker>
+template<class queue>
 struct producer
 {
-   //TODO how to get rid of it?
-   //typedef void result_type;
    typedef queue queue_t;
-   typedef worker worker_t;
    queue& queue_;
    producer(queue& value) :
          queue_(value)
@@ -216,16 +213,15 @@ struct producer
       boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
 
       // push some work
-      worker work;
+      typename queue::worker_t work;
       queue_.push(work);
    }
 };
 
-template<class queue, class worker>
+template<class queue>
 struct consumer
 {
    typedef queue queue_t;
-   typedef worker worker_t;
    queue& queue_;
    consumer(queue& value) :
          queue_(value)
@@ -236,7 +232,7 @@ struct consumer
    {
       if (queue_.size())
       {
-         worker wrk = queue_.pop();
+         typename queue::worker_t wrk = queue_.pop();
          wrk();
       }
    }
@@ -256,13 +252,15 @@ struct consumer
 //   _queue.push(wrk);
 //}
 
-template<typename queue, typename consumer_or_producer>
+template<typename consumer_or_producer>
 struct async_wrapper
 {
+   //TODO get rid of this
    typedef void result_type;
-   queue& queue_;
+   typename consumer_or_producer::queue_t& queue_;
    boost::asio::io_service& io_service_;
-   async_wrapper(queue& value, boost::asio::io_service& io_service) :
+   async_wrapper(typename consumer_or_producer::queue_t& value,
+         boost::asio::io_service& io_service) :
          queue_(value), io_service_(io_service)
    {
    }
@@ -274,8 +272,7 @@ struct async_wrapper
 
       io_service_.post(
             boost::bind(
-                  async_wrapper<queue, consumer_or_producer>(queue_,
-                        io_service_)));
+                  async_wrapper<consumer_or_producer>(queue_, io_service_)));
    }
 };
 
@@ -315,11 +312,8 @@ int main(int argc, char* argv[])
    typedef queue<std::deque<worker> > queue_t;
    //typedef queue<std::queue<worker> > queue_t;
 
-   typedef producer<queue_t, queue_t::worker_t> producer_t;
-   typedef async_wrapper<producer_t::queue_t, producer_t> async_producer_t;
-
-   typedef consumer<queue_t, queue_t::worker_t> consumer_t;
-   typedef async_wrapper<consumer_t::queue_t, consumer_t> async_consumer_t;
+   typedef async_wrapper<producer<queue_t> > async_producer_t;
+   typedef async_wrapper<consumer<queue_t> > async_consumer_t;
 
    // declarations
    thread_pool pool(pool_size);
