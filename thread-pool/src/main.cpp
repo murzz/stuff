@@ -126,19 +126,8 @@ private:
    lock_t::mutex_type mutex_;
 };
 
-struct worker    //:boost::noncopyable
+struct worker
 {
-   worker() :
-      done_(false)
-   {
-   }
-
-//   ~worker()
-//   {
-//      // LOG_IF(WARNING, !done_) << "work was not done";
-//      // LOG_IF(INFO, done_) << "work was done";
-//   }
-
    void operator()()
    {
       LOG(INFO)<<"--> starting work";
@@ -148,10 +137,8 @@ struct worker    //:boost::noncopyable
 
       // simulating hard work
       boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
-      done_=true;
       LOG(INFO)<<"<-- work done";
    }
-   bool done_;
 };
 
 //void work()
