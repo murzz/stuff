@@ -50,8 +50,8 @@ public:
    }
 
    thread_pool(std::size_t pool_size) :
-         work_(io_service_), threads_available_(pool_size),
-               signals_(io_service_, SIGINT, SIGTERM)
+      work_(io_service_), threads_available_(pool_size),
+         signals_(io_service_, SIGINT, SIGTERM)
    {
       DLOG(INFO)<< __func__;
       for (std::size_t idx = 0; idx < pool_size; ++idx)
@@ -67,8 +67,8 @@ public:
       DLOG(INFO) << "stopping service...";
       // Force all threads to return from io_service::run().
       io_service_.stop();
+
       DLOG(INFO) << "joining threads...";
-      // Suppress all exceptions.
       try
       {
          threads_.join_all();
@@ -89,7 +89,7 @@ public:
 
       // Post a wrapped task into the queue.
       io_service_.post(
-            boost::bind(&thread_pool::wrap_task<Task>, this,task));
+         boost::bind(&thread_pool::wrap_task<Task>, this,task));
    }
 
    const size_t& available()
@@ -132,7 +132,7 @@ void work()
 struct worker    //:boost::noncopyable
 {
    worker() :
-         done_(false)
+      done_(false)
    {
    }
    ~worker()
@@ -165,6 +165,16 @@ class queue
 {
 public:
    typedef typename container::value_type worker_t;
+
+   queue()
+   {
+      LOG(INFO)<<__func__;
+   }
+
+   ~queue()
+   {
+      LOG(INFO)<<__func__;
+   }
 
    void push(const worker_t& value)
    {
@@ -199,7 +209,7 @@ struct producer
    typedef queue queue_t;
    queue& queue_;
    producer(queue& value) :
-         queue_(value)
+      queue_(value)
    {
    }
 
@@ -224,7 +234,7 @@ struct consumer
    typedef queue queue_t;
    queue& queue_;
    consumer(queue& value) :
-         queue_(value)
+      queue_(value)
    {
    }
 
@@ -260,8 +270,8 @@ struct async_wrapper
    typename consumer_or_producer::queue_t& queue_;
    boost::asio::io_service& io_service_;
    async_wrapper(typename consumer_or_producer::queue_t& value,
-         boost::asio::io_service& io_service) :
-         queue_(value), io_service_(io_service)
+      boost::asio::io_service& io_service) :
+      queue_(value), io_service_(io_service)
    {
    }
 
@@ -271,8 +281,8 @@ struct async_wrapper
       consume_or_produce();
 
       io_service_.post(
-            boost::bind(
-                  async_wrapper<consumer_or_producer>(queue_, io_service_)));
+         boost::bind(
+            async_wrapper<consumer_or_producer>(queue_, io_service_)));
    }
 };
 
@@ -285,19 +295,20 @@ int main(int argc, char* argv[])
    // defaults for program options
    const size_t defalt_pool_size = 2;
    size_t pool_size =
-         boost::thread::hardware_concurrency() ?
-               boost::thread::hardware_concurrency() : defalt_pool_size;
+      boost::thread::hardware_concurrency() ?
+                                              boost::thread::hardware_concurrency() :
+                                              defalt_pool_size;
 
    // program options
    boost::program_options::options_description desc("Allowed options");
    desc.add_options()
    ("help,h", "produce help message")
    ("pool-size,s", boost::program_options::value<size_t>(&pool_size),
-         "set pool size");
+      "set pool size");
 
    boost::program_options::variables_map vm;
    boost::program_options::store(
-         boost::program_options::parse_command_line(argc, argv, desc), vm);
+      boost::program_options::parse_command_line(argc, argv, desc), vm);
    boost::program_options::notify(vm);
 
    if (vm.count("help"))
@@ -316,21 +327,27 @@ int main(int argc, char* argv[])
    typedef async_wrapper<consumer<queue_t> > async_consumer_t;
 
    // declarations
-   thread_pool pool(pool_size);
    queue_t the_queue;
 
-   // since consumer and producer would repost work after current work item is finished
-   // only 2 threads will work. now we create multiple guys for many threads to be busy.
-   for (size_t idx = pool_size; idx; --idx)
+   // pool has to be destroyed before queue, otherwise workers could still try to work with
+   // queue which is dead already
    {
-      // producing work
-      pool.run_task(async_producer_t(the_queue, pool.get_io_service()));
-      // consuming work
-      pool.run_task(async_consumer_t(the_queue, pool.get_io_service()));
+      thread_pool pool(pool_size);
+
+      // since consumer and producer would repost work after current work item is finished
+      // only 2 threads will work. now we create multiple guys for many threads to be busy.
+      for (size_t idx = pool_size; idx; --idx)
+      {
+         // producing work
+         pool.run_task(async_producer_t(the_queue, pool.get_io_service()));
+         // consuming work
+         pool.run_task(async_consumer_t(the_queue, pool.get_io_service()));
+      }
+
+      // this thread will also work for us!
+      pool.get_io_service().run();
+
+      LOG(INFO)<<"returned from run() in main thread";
    }
-
-   // this thread will also work for us!
-   pool.get_io_service().run();
-
    return EXIT_SUCCESS;
 }
