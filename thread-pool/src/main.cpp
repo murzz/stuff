@@ -30,6 +30,77 @@ void log_exception(const char* caller)
 
 #define LOG_EXCEPTION() {log_exception(__func__);}
 
+template<class container>
+class queue
+{
+public:
+   typedef typename container::value_type worker_t;
+
+   queue()
+   {
+      LOG(INFO)<<__func__;
+   }
+
+   ~queue()
+   {
+      LOG(INFO)<<__func__;
+   }
+
+   void push(const worker_t& value)
+   {
+      lock_t lock(mutex_);
+      container_.push_back(value);
+      LOG(INFO)<<"work pushed, queue size is " << container_.size();
+   }
+
+   typename container::size_type size()
+   {
+      lock_t lock(mutex_);
+      return container_.size();
+   }
+
+   worker_t pop()
+   {
+      lock_t lock(mutex_);
+      worker_t item = container_.front();
+      container_.pop_front();
+      LOG(INFO)<<"work popped, queue size is " << container_.size();
+      return item;
+   }
+private:
+   container container_;
+   typedef boost::unique_lock<boost::mutex> lock_t;
+   lock_t::mutex_type mutex_;
+};
+
+struct worker    //:boost::noncopyable
+{
+   worker() :
+      done_(false)
+   {
+   }
+
+//   ~worker()
+//   {
+//      // LOG_IF(WARNING, !done_) << "work was not done";
+//      // LOG_IF(INFO, done_) << "work was done";
+//   }
+
+   void operator()()
+   {
+      LOG(INFO)<<"--> starting work";
+
+      boost::random::mt19937 rng;
+      boost::random::uniform_int_distribution<> rnd(1,3);
+
+      // simulating hard work
+      boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
+      done_=true;
+      LOG(INFO)<<"<-- work done";
+   }
+   bool done_;
+};
+
 class thread_pool
 {
 private:
@@ -44,9 +115,16 @@ private:
 
 public:
 
+   typedef queue<std::deque<worker> > queue_t;
+
    boost::asio::io_service& get_io_service()
    {
       return io_service_;
+   }
+
+   queue_t& get_queue()
+   {
+      return queue_;
    }
 
    thread_pool(std::size_t pool_size) :
@@ -122,86 +200,20 @@ private:
       lock_t lock(mutex_);
       ++threads_available_;
    }
+
+   queue_t queue_;
 };
 
-void work()
-{
-   LOG(INFO)<< __func__;
-}
+//void work()
+//{
+//   LOG(INFO)<< __func__;
+//}
 
-struct worker    //:boost::noncopyable
-{
-   worker() :
-      done_(false)
-   {
-   }
-   ~worker()
-   {
-      // LOG_IF(WARNING, !done_) << "work was not done";
-      // LOG_IF(INFO, done_) << "work was done";
-   }
-   void operator()()
-   {
-      LOG(INFO)<<"--> starting work";
-
-      boost::random::mt19937 rng;
-      boost::random::uniform_int_distribution<> rnd(1,3);
-
-      // simulating hard work
-      boost::this_thread::sleep(boost::posix_time::seconds(rnd(rng)));
-      done_=true;
-      LOG(INFO)<<"<-- work done";
-   }
-   bool done_;
-};
-
-void more_work(int)
-{
-   LOG(INFO)<< __func__;
-}
-
-template<class container>
-class queue
-{
-public:
-   typedef typename container::value_type worker_t;
-
-   queue()
-   {
-      LOG(INFO)<<__func__;
-   }
-
-   ~queue()
-   {
-      LOG(INFO)<<__func__;
-   }
-
-   void push(const worker_t& value)
-   {
-      lock_t lock(mutex_);
-      container_.push_back(value);
-      LOG(INFO)<<"work pushed, queue size is " << container_.size();
-   }
-
-   typename container::size_type size()
-   {
-      lock_t lock(mutex_);
-      return container_.size();
-   }
-
-   worker_t pop()
-   {
-      lock_t lock(mutex_);
-      worker_t item = container_.front();
-      container_.pop_front();
-      LOG(INFO)<<"work popped, queue size is " << container_.size();
-      return item;
-   }
-private:
-   container container_;
-   typedef boost::unique_lock<boost::mutex> lock_t;
-   lock_t::mutex_type mutex_;
-};
+//
+//void more_work(int)
+//{
+//   LOG(INFO)<< __func__;
+//}
 
 template<class queue>
 struct producer
@@ -319,35 +331,25 @@ int main(int argc, char* argv[])
 
    LOG(INFO)<< "pool size is " << pool_size;
 
-   // defines
-   typedef queue<std::deque<worker> > queue_t;
-   //typedef queue<std::queue<worker> > queue_t;
+   typedef async_wrapper<producer<thread_pool::queue_t> > async_producer_t;
+   typedef async_wrapper<consumer<thread_pool::queue_t> > async_consumer_t;
 
-   typedef async_wrapper<producer<queue_t> > async_producer_t;
-   typedef async_wrapper<consumer<queue_t> > async_consumer_t;
+   thread_pool pool(pool_size);
 
-   // declarations
-   queue_t the_queue;
-
-   // pool has to be destroyed before queue, otherwise workers could still try to work with
-   // queue which is dead already
+   // since consumer and producer would repost work after current work item is finished
+   // only 2 threads will work. now we create multiple guys for many threads to be busy.
+   for (size_t idx = pool_size; idx; --idx)
    {
-      thread_pool pool(pool_size);
-
-      // since consumer and producer would repost work after current work item is finished
-      // only 2 threads will work. now we create multiple guys for many threads to be busy.
-      for (size_t idx = pool_size; idx; --idx)
-      {
-         // producing work
-         pool.run_task(async_producer_t(the_queue, pool.get_io_service()));
-         // consuming work
-         pool.run_task(async_consumer_t(the_queue, pool.get_io_service()));
-      }
-
-      // this thread will also work for us!
-      pool.get_io_service().run();
-
-      LOG(INFO)<<"returned from run() in main thread";
+      // producing work
+      pool.run_task(async_producer_t(pool.get_queue(), pool.get_io_service()));
+      // consuming work
+      pool.run_task(async_consumer_t(pool.get_queue(), pool.get_io_service()));
    }
+
+   // this thread will also work for us!
+   pool.get_io_service().run();
+
+   LOG(INFO)<<"returned from run() in main thread";
+
    return EXIT_SUCCESS;
 }
