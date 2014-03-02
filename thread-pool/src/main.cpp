@@ -45,10 +45,19 @@ public:
       return io_service_;
    }
 
-   thread_pool(std::size_t pool_size) :
-      work_(io_service_), signals_(io_service_, SIGINT, SIGTERM)
+   std::size_t run()
    {
       DLOG(INFO)<< __func__;
+
+      // this thread will also work for us!
+      return io_service_.run();
+   }
+
+   thread_pool(std::size_t pool_size) :
+   work_(io_service_), signals_(io_service_, SIGINT, SIGTERM)
+   {
+      DLOG(INFO)<< __func__;
+
       for (std::size_t idx = 0; idx < pool_size; ++idx)
       {
          threads_.create_thread( boost::bind(&boost::asio::io_service::run, boost::ref(io_service_)));
@@ -76,7 +85,7 @@ public:
    }
 
    template<typename Task>
-   void run_task(Task task)
+   void post(Task task)
    {
       io_service_.post( boost::bind(task));
    }
@@ -235,38 +244,55 @@ struct async_wrapper
    }
 };
 
+struct env
+{
+   size_t pool_size_;
+   const size_t defalt_pool_size_ = 2;
+   env() :
+      pool_size_(defalt_pool_size_)
+   {
+      pool_size_ =
+         boost::thread::hardware_concurrency() ?
+                                                 boost::thread::hardware_concurrency() :
+                                                 defalt_pool_size_;
+   }
+
+   int program_options(int argc, char* argv[])
+   {
+      boost::program_options::options_description desc("Allowed options");
+      desc.add_options()
+      ("help,h", "produce help message")
+      ("pool-size,s", boost::program_options::value<std::size_t>(&pool_size_),
+         "set pool size");
+
+      boost::program_options::variables_map vm;
+      boost::program_options::store(
+         boost::program_options::parse_command_line(argc, argv, desc), vm);
+      boost::program_options::notify(vm);
+
+      if (vm.count("help"))
+      {
+         std::cout << desc << std::endl;
+         return EXIT_FAILURE;
+      }
+
+      LOG(INFO)<< "pool size is " << pool_size_;
+      return EXIT_SUCCESS;
+   }
+};
+
 int main(int argc, char* argv[])
 {
-   // google
+   // glog
    google::InitGoogleLogging(argv[0]);
    google::InstallFailureSignalHandler();
 
-   // defaults for program options
-   const size_t defalt_pool_size = 2;
-   size_t pool_size =
-      boost::thread::hardware_concurrency() ?
-                                              boost::thread::hardware_concurrency() :
-                                              defalt_pool_size;
-
-   // program options
-   boost::program_options::options_description desc("Allowed options");
-   desc.add_options()
-   ("help,h", "produce help message")
-   ("pool-size,s", boost::program_options::value<size_t>(&pool_size),
-      "set pool size");
-
-   boost::program_options::variables_map vm;
-   boost::program_options::store(
-      boost::program_options::parse_command_line(argc, argv, desc), vm);
-   boost::program_options::notify(vm);
-
-   if (vm.count("help"))
+   env env;
+   const int result = env.program_options(argc, argv);
+   if (EXIT_SUCCESS != result)
    {
-      std::cout << desc << std::endl;
-      return EXIT_FAILURE;
+      return result;
    }
-
-   LOG(INFO)<< "pool size is " << pool_size;
 
    typedef queue<std::deque<worker> > queue_t;
    typedef async_wrapper<producer<queue_t> > async_producer_t;
@@ -275,22 +301,21 @@ int main(int argc, char* argv[])
    // pool needs to be destroyed before queue, otherwise some tasks could still use queue when it is already dead
    queue_t queue;
    {
-      thread_pool pool(pool_size);
+      thread_pool pool(env.pool_size_);
 
       // since consumer and producer would repost work after current work item is finished
       // only 2 threads will work. now we create multiple guys for many threads to be busy.
-      for (size_t idx = pool_size; idx; --idx)
+      for (size_t idx = env.pool_size_; idx; --idx)
       {
          // producing work
-         pool.run_task(async_producer_t(queue, pool.get_io_service()));
+         pool.post(async_producer_t(queue, pool.get_io_service()));
          // consuming work
-         pool.run_task(async_consumer_t(queue, pool.get_io_service()));
+         pool.post(async_consumer_t(queue, pool.get_io_service()));
       }
 
-      // this thread will also work for us!
-      pool.get_io_service().run();
+      // add current thread to pool. will block.
+      pool.run();
    }
-   LOG(INFO)<<"returned from run() in main thread";
 
    return EXIT_SUCCESS;
 }
