@@ -3,5 +3,5 @@
 
 #include "parser-tests.hpp"
 #include "board-tests.hpp"
-#include <boost/test/unit_test.hpp>
+#include "downloader-tests.hpp"
 
