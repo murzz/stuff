@@ -1,7 +1,8 @@
 #pragma once
 
-//#define BOOST_TEST_MODULE board tests
+//#define BOOST_TEST_MODULE board
 #include <boost/test/unit_test.hpp>
+#include <boost/scoped_ptr.hpp>
 
 #include "board.hpp"
 
@@ -93,4 +94,21 @@ BOOST_AUTO_TEST_CASE( wrong_cell_symbol_board )
 BOOST_AUTO_TEST_CASE( dimension_and_size_mismatch )
 {
    BOOST_REQUIRE_THROW(coil::board(100, 1, "X"), std::logic_error);
+}
+
+BOOST_AUTO_TEST_CASE( download )
+{
+   const std::string name = "name=$name";
+   const std::string pass = "password=$pass";
+   const std::string url = std::string("http://www.hacker.org/coil/index.php")
+      + "?" + name + "&" + pass;
+
+   boost::asio::io_service ios;
+
+   // make it dynamic to enable no throw check in constructor via macro
+   // object will be destroyed when leaving scope of macro
+   // no tasks will be left for ios then
+   boost::scoped_ptr<coil::board> board;
+   BOOST_REQUIRE_NO_THROW(board.reset(new coil::board(ios, url)));
+   BOOST_REQUIRE_NO_THROW(ios.run());
 }

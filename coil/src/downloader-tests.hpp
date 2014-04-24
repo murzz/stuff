@@ -1,7 +1,6 @@
 #pragma once
 
 #include <boost/test/unit_test.hpp>
-#include <boost/bind.hpp>
 
 #include "downloader.hpp"
 
@@ -25,7 +24,7 @@ BOOST_AUTO_TEST_CASE( download_html )
    const std::string url = "http://google.com";
    downloader.get_content(url, boost::bind(ok_handler, _1, _2));
 
-   io_service.run();
+   BOOST_REQUIRE_NO_THROW(io_service.run());
 }
 
 void wrong_hostname_handler(const boost::system::error_code & ec, const std::string & html)
@@ -41,5 +40,5 @@ BOOST_AUTO_TEST_CASE( download_wrong_host )
    const std::string url = "http://unresolvable-hostname-for-sure-nyash-myash.com";
    downloader.get_content(url, boost::bind(wrong_hostname_handler, _1, _2));
 
-   io_service.run();
+   BOOST_REQUIRE_NO_THROW(io_service.run());
 }
