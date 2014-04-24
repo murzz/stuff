@@ -5,26 +5,25 @@
 #include <stdexcept>
 #include <algorithm>
 
+namespace coil
+{
 class board
 {
 
 public:
 
-   class squares
+   enum class square
+   {
+      empty = '.',
+      wall = 'X'
+   };
+
+   class squares: public std::vector<board::square>
    {
 
    public:
-
-      enum class square
-      {
-         empty = '.',
-         wall = 'X'
-      };
-      typedef std::vector<square> type;
-
       squares()
       {
-
       }
 
       squares(const std::string& squares)
@@ -32,20 +31,20 @@ public:
          *this = squares;
       }
 
-      squares& operator=(const std::string& squares)
+      squares& operator=(const std::string& string)
       {
-         value_.clear();
+         this->clear();
 
          //std::for_each(squares.begin(), squares.end(), [](const std::string::value_type& square_str)
-         for (const auto& square_str : squares)
+         for (const auto& symbol : string)
          {
-            squares::square square = static_cast<squares::square>(square_str);
+            board::square square = static_cast<board::square>(symbol);
             switch (square)
             {
-               case squares::square::empty:
-                  case squares::square::wall:
-                  value_.push_back(square);
-               break;
+               case board::square::empty:
+                  case board::square::wall:
+                  this->push_back(square);
+                  break;
                default:
                   throw std::runtime_error("wrong square");
             }
@@ -54,52 +53,42 @@ public:
 
          return *this;
       }
-
-      bool operator==(const squares& rhs) const
-      {
-         return value_ == rhs.value_;
-      }
-
-      type& value()
-      {
-         return value_;
-      }
-
-   private:
-      type value_;
    };
 
    board() :
-         x_(0), y_(0)
+      width_(0), height_(0)
    {
 
    }
 
-   board(const size_t& x, const size_t& y, const std::string& squares)
+   board(const size_t& width, const size_t & height, const std::string & string)
    {
       // check board size
-      if (x * y != squares.size())
+      if (width * height != string.size())
       {
          throw std::logic_error("board size mismatch");
       }
 
-      x_ = x;
-      y_ = y;
-      squares_ = squares;
+      width_ = width;
+      height_ = height;
+      squares_ = string;
    }
 
-   bool operator==(const board& rhs) const
+   bool operator==(const board & rhs) const
+
    {
-      return x_ == rhs.x_ && y_ == rhs.y_ && squares_ == rhs.squares_;
+      return width_ == rhs.width_ && height_ == rhs.height_ && squares_ == rhs.squares_;
    }
 
-   bool operator!=(const board& rhs) const
-   {
+   bool operator!=(const board & rhs) const
+      {
       return !(*this == rhs);
    }
 
 private:
-   size_t x_;
-   size_t y_;
+   size_t width_;
+   size_t height_;
    squares squares_;
 };
+
+}
