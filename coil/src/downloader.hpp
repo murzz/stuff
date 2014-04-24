@@ -127,7 +127,7 @@ public:
    class category: public boost::system::error_category
    {
    public:
-      const char* name() const
+      const char* name() const noexcept
       {
          return "downloader.curl";
       }
