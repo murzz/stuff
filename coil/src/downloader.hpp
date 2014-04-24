@@ -162,20 +162,3 @@ public:
          static_cast<int>(e), get_error_category());
    }
 };
-
-// eto svjo kollbeki, kotorie zovutsja esli ne bilo errora
-// nastojaschij runner budet v teste, tam instance io_Servisa
-//std::string download_html()
-//{
-//
-//}
-//
-//board parse_html(const std::string & html)
-//{
-//   return board;
-//}
-//
-//board get_board()
-//{
-//   return parse_html(download_html());
-//}
