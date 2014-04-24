@@ -23,7 +23,7 @@ BOOST_AUTO_TEST_CASE( download_html )
    //boost::asio::io_service::work work(io_service);
    downloader downloader(io_service);
    const std::string url = "http://google.com";
-   downloader.get_html(url, boost::bind(ok_handler, _1, _2));
+   downloader.get_content(url, boost::bind(ok_handler, _1, _2));
 
    io_service.run();
 }
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE( download_wrong_host )
    boost::asio::io_service io_service;
    downloader downloader(io_service);
    const std::string url = "http://unresolvable-hostname-for-sure-nyash-myash.com";
-   downloader.get_html(url, boost::bind(wrong_hostname_handler, _1, _2));
+   downloader.get_content(url, boost::bind(wrong_hostname_handler, _1, _2));
 
    io_service.run();
 }

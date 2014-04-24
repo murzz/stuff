@@ -4,52 +4,50 @@
 #include <boost/bind.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <curl/curl.h>
-#include "board.hpp"
 
 class downloader
 {
 private:
    boost::asio::io_service & io_service_;
-   std::string html_;
+   std::string content_;
 
-   template<typename HTMLHandler>
-   void init(const std::string & url, HTMLHandler html_handler)
+   template<typename Handler>
+   void init(const std::string & url, Handler handler)
    {
       CURL * curl = curl_easy_init();
       if (curl)
       {
          io_service_.post(
-            boost::bind(&downloader::setopt<HTMLHandler>, this, url, curl, html_handler));
+            boost::bind(&downloader::setopt<Handler>, this, url, curl, handler));
       }
       else
       {
-         html_handler.template get<0>()(
+         handler.template get<0>()(
             boost::asio::error::make_error_code(boost::asio::error::invalid_argument),
             std::string());
       }
    }
 
-   template<typename HTMLHandler>
-   void cleanup(const boost::system::error_code & ec, CURL * curl, HTMLHandler html_handler)
+   template<typename Handler>
+   void cleanup(const boost::system::error_code & ec, CURL * curl, Handler handler)
    {
       if (curl)
       {
          curl_easy_cleanup(curl);
       }
-      io_service_.post(boost::bind(html_handler.template get<0>(), ec, std::string()));
-      //html_handler.template get<0>()(ec, std::string());
+      io_service_.post(boost::bind(handler.template get<0>(), ec, std::string()));
    }
 
-   template<typename HTMLHandler>
-   void setopt(const std::string & url, CURL * curl, HTMLHandler html_handler)
+   template<typename Handler>
+   void setopt(const std::string & url, CURL * curl, Handler handler)
    {
       CURLcode res = CURLE_OK;
       res = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
       if (CURLE_OK != res)
       {
          io_service_.post(
-            boost::bind(&downloader::cleanup<HTMLHandler>, this, make_error_code(res), curl,
-               html_handler));
+            boost::bind(&downloader::cleanup<Handler>, this, make_error_code(res), curl,
+               handler));
          return;
       }
 
@@ -57,8 +55,8 @@ private:
       if (CURLE_OK != res)
       {
          io_service_.post(
-            boost::bind(&downloader::cleanup<HTMLHandler>, this, make_error_code(res), curl,
-               html_handler));
+            boost::bind(&downloader::cleanup<Handler>, this, make_error_code(res), curl,
+               handler));
          return;
       }
 
@@ -66,29 +64,29 @@ private:
       if (CURLE_OK != res)
       {
          io_service_.post(
-            boost::bind(&downloader::cleanup<HTMLHandler>, this, make_error_code(res), curl,
-               html_handler));
+            boost::bind(&downloader::cleanup<Handler>, this, make_error_code(res), curl,
+               handler));
          return;
       }
 
       io_service_.post(
-         boost::bind(&downloader::perform<HTMLHandler>, this, curl, html_handler));
+         boost::bind(&downloader::perform<Handler>, this, curl, handler));
    }
 
    static size_t write_data(void *ptr, size_t size, size_t nmemb, downloader * self)
    {
-      std::string html(static_cast<std::string::value_type*>(ptr), size * nmemb);
-      self->on_html(html);
-      return html.size();
+      std::string content(static_cast<std::string::value_type*>(ptr), size * nmemb);
+      self->on_content(content);
+      return content.size();
    }
 
-   void on_html(const std::string & html)
+   void on_content(const std::string & content)
    {
-      html_ += html;
+      content_ += content;
    }
 
-   template<typename HTMLHandler>
-   void perform(CURL * curl, HTMLHandler html_handler)
+   template<typename Handler>
+   void perform(CURL * curl, Handler handler)
    {
       // would block and do the job
       // this would eliminate all asio fun though
@@ -97,14 +95,13 @@ private:
       {
          // success
          const boost::system::error_code ec;
-         io_service_.post(boost::bind(html_handler.template get<0>(), ec, html_));
-         //html_handler.template get<0>()(ec, html);
+         io_service_.post(boost::bind(handler.template get<0>(), ec, content_));
       }
       else
       {
          io_service_.post(
-            boost::bind(&downloader::cleanup<HTMLHandler>, this,
-               make_error_code(res), curl, html_handler));
+            boost::bind(&downloader::cleanup<Handler>, this,
+               make_error_code(res), curl, handler));
       }
    }
 
@@ -115,13 +112,13 @@ public:
 
    }
 
-   template<typename HTMLHandler>
-   void get_html(const std::string & url, HTMLHandler html_handler)
+   template<typename Handler>
+   void get_content(const std::string & url, Handler handler)
    {
-      html_.clear();
+      content_.clear();
       io_service_.post(
-         boost::bind(&downloader::init<boost::tuple<HTMLHandler> >, this, url,
-            boost::make_tuple(html_handler)));
+         boost::bind(&downloader::init<boost::tuple<Handler> >, this, url,
+            boost::make_tuple(handler)));
    }
 
    class category: public boost::system::error_category
