@@ -112,7 +112,8 @@ private:
       {
          throw ec;
       }
-     // std::cout << html;
+      //TODO: parse html
+     std::cout << html;
       // no errors
 //      boost::system::error_code no_error;
 //      BOOST_REQUIRE_MESSAGE(ec == no_error, ec.message());

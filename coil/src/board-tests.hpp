@@ -96,16 +96,23 @@ BOOST_AUTO_TEST_CASE( dimension_and_size_mismatch )
    BOOST_REQUIRE_THROW(coil::board(100, 1, "X"), std::logic_error);
 }
 
-BOOST_AUTO_TEST_CASE( download )
+BOOST_AUTO_TEST_CASE( download_board )
 {
-   const std::string name = "name=$name";
-   const std::string pass = "password=$pass";
+   char* name_env = std::getenv("name");
+   BOOST_REQUIRE(nullptr != name_env);
+
+   char* pass_env = std::getenv("pass");
+   BOOST_REQUIRE(nullptr != pass_env);
+
+   const std::string name = std::string("name=") + std::string(name_env);
+   const std::string pass = std::string("password=") + std::string(pass_env);
+
    const std::string url = std::string("http://www.hacker.org/coil/index.php")
       + "?" + name + "&" + pass;
 
    boost::asio::io_service ios;
 
-   // make it dynamic to enable no throw check in constructor via macro
+   // make it dynamic to enable no throw check in constructor via macro.
    // object will be destroyed when leaving scope of macro
    // no tasks will be left for ios then
    boost::scoped_ptr<coil::board> board;
