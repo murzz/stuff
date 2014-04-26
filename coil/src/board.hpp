@@ -38,19 +38,19 @@ public:
          *this = squares;
       }
 
-      squares& operator=(const std::string& string)
+      squares& operator=(const std::string& squares)
       {
-         copy_from(string);
+         copy_from(squares);
          return *this;
       }
 
    private:
-      void copy_from(const std::string& string)
+      void copy_from(const std::string& squares)
       {
          this->clear();
 
          //std::for_each(squares.begin(), squares.end(), [](const std::string::value_type& square_str)
-         for (const auto& symbol : string)
+         for (const auto& symbol : squares)
          {
             board::square square = static_cast<board::square>(symbol);
             switch (square)
@@ -73,22 +73,22 @@ public:
 
    }
 
-   board(const size_t& width, const size_t & height, const std::string & string)
+   board(const size_t& width, const size_t & height, const std::string & squares)
    {
       // check board size
-      if (width * height != string.size())
+      if (width * height != squares.size())
       {
          throw std::logic_error("board size mismatch");
       }
 
       width_ = width;
       height_ = height;
-      squares_ = string;
+      squares_ = squares;
    }
 
    board(boost::asio::io_service & ios, const std::string & url)
    {
-      downloader_.reset(new downloader(ios));
+      downloader_.reset(new curl::downloader(ios));
       downloader_->get_content(url, boost::bind(&board::html_handler, this, _1, _2));
    }
 
@@ -105,7 +105,7 @@ public:
    }
 
 private:
-   boost::shared_ptr<downloader> downloader_;
+   boost::shared_ptr<curl::downloader> downloader_;
    size_t width_;
    size_t height_;
    squares squares_;
