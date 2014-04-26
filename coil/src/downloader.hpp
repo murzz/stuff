@@ -5,6 +5,58 @@
 #include <boost/tuple/tuple.hpp>
 #include <curl/curl.h>
 
+namespace curl
+{
+
+namespace error
+{
+
+class category: public boost::system::error_category
+{
+public:
+   const char* name() const noexcept
+   {
+      return "downloader.curl";
+   }
+
+   std::string message(int value) const
+
+   {
+      return curl_easy_strerror(static_cast<CURLcode>(value));
+   }
+};
+
+} // namespace error
+
+template<class T>
+struct is_error_code_enum
+{
+   static const bool value = false;
+};
+
+template<>
+struct is_error_code_enum<CURLcode>
+{
+   static const bool value = true;
+};
+
+inline static const boost::system::error_category& get_error_category()
+{
+   static error::category instance;
+   return instance;
+}
+
+namespace error
+{
+
+inline static boost::system::error_code make_error_code(CURLcode e)
+{
+   return boost::system::error_code(
+      static_cast<int>(e), curl::get_error_category());
+}
+
+} // namespace error
+
 class downloader
 {
 private:
@@ -46,7 +98,7 @@ private:
       if (CURLE_OK != res)
       {
          io_service_.post(
-            boost::bind(&downloader::cleanup<Handler>, this, make_error_code(res), curl,
+            boost::bind(&downloader::cleanup<Handler>, this, error::make_error_code(res), curl,
                handler));
          return;
       }
@@ -55,7 +107,7 @@ private:
       if (CURLE_OK != res)
       {
          io_service_.post(
-            boost::bind(&downloader::cleanup<Handler>, this, make_error_code(res), curl,
+            boost::bind(&downloader::cleanup<Handler>, this, error::make_error_code(res), curl,
                handler));
          return;
       }
@@ -64,7 +116,7 @@ private:
       if (CURLE_OK != res)
       {
          io_service_.post(
-            boost::bind(&downloader::cleanup<Handler>, this, make_error_code(res), curl,
+            boost::bind(&downloader::cleanup<Handler>, this, error::make_error_code(res), curl,
                handler));
          return;
       }
@@ -101,7 +153,7 @@ private:
       {
          io_service_.post(
             boost::bind(&downloader::cleanup<Handler>, this,
-               make_error_code(res), curl, handler));
+               error::make_error_code(res), curl, handler));
       }
    }
 
@@ -121,41 +173,6 @@ public:
             boost::make_tuple(handler)));
    }
 
-   class category: public boost::system::error_category
-   {
-   public:
-      const char* name() const noexcept
-      {
-         return "downloader.curl";
-      }
-
-      std::string message(int value) const
-
-      {
-         return curl_easy_strerror(static_cast<CURLcode>(value));
-      }
-   };
-
-   inline static const boost::system::error_category& get_error_category()
-   {
-      static category instance;
-      return instance;
-   }
-
-//   template<class T>
-//   struct is_error_code_enum
-//   {
-//      static const bool value = false;
-//   };
-//
-//   template<> struct is_error_code_enum<CURLcode>
-//   {
-//      static const bool value = true;
-//   };
-
-   inline static boost::system::error_code make_error_code(CURLcode e)
-   {
-      return boost::system::error_code(
-         static_cast<int>(e), get_error_category());
-   }
 };
+
+} //namespace curl

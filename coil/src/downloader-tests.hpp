@@ -19,7 +19,7 @@ void ok_handler(const boost::system::error_code & ec, const std::string & html)
 BOOST_AUTO_TEST_CASE( download_html )
 {
    boost::asio::io_service io_service;
-   downloader downloader(io_service);
+   curl::downloader downloader(io_service);
    const std::string url = "http://google.com";
    downloader.get_content(url, boost::bind(ok_handler, _1, _2));
 
@@ -28,14 +28,14 @@ BOOST_AUTO_TEST_CASE( download_html )
 
 void wrong_hostname_handler(const boost::system::error_code & ec, const std::string & html)
 {
-   boost::system::error_code no_host = downloader::make_error_code(CURLE_COULDNT_RESOLVE_HOST);
+   boost::system::error_code no_host = curl::error::make_error_code(CURLE_COULDNT_RESOLVE_HOST);
    BOOST_REQUIRE_EQUAL(ec, no_host);
 }
 
 BOOST_AUTO_TEST_CASE( download_wrong_host )
 {
    boost::asio::io_service io_service;
-   downloader downloader(io_service);
+   curl::downloader downloader(io_service);
    const std::string url = "http://unresolvable-hostname-for-sure-nyash-myash.com";
    downloader.get_content(url, boost::bind(wrong_hostname_handler, _1, _2));
 
