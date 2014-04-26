@@ -11,20 +11,29 @@ void error_handler(const boost::system::error_code & ec)
    }
 }
 
+class worker
+{
+public:
+   worker(int argc, char** argv)
+   {
+      typedef boost::function<void(const boost::system::error_code &)> error_handler_type;
+      error_handler_type eh = boost::bind(error_handler, boost::asio::placeholders::error);
+      ios.post(
+         boost::bind(parse<boost::tuple<error_handler_type> >, boost::ref(ios), argc, argv,
+            boost::make_tuple(eh)));
+      ios.run();
+
+   }
+private:
+   boost::asio::io_service ios;
+   // here we can instantiate curl::downloader, board etc..
+};
+
 int main(int argc, char** argv)
 {
-   boost::asio::io_service ios;
-   //boost::asio::io_service& ios_ref = ios;
-
-   typedef boost::function<void(const boost::system::error_code &)> error_handler_type;
-   error_handler_type eh = boost::bind(error_handler, boost::asio::placeholders::error);
-   ios.post(
-      boost::bind(parse<boost::tuple<error_handler_type> >, boost::ref(ios), argc, argv,
-         boost::make_tuple(eh)));
-
    try
    {
-      ios.run();
+      worker(argc, argv);
    }
    catch (const std::exception& e)
    {
