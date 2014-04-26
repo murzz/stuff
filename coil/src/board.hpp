@@ -5,6 +5,10 @@
 #include <stdexcept>
 #include <algorithm>
 
+#include <boost/algorithm/string.hpp>
+
+#include <htmlcxx/html/ParserDom.h>
+
 #include "downloader.hpp"
 
 namespace coil
@@ -112,16 +116,30 @@ private:
       {
          throw ec;
       }
-      //TODO: parse html
-     std::cout << html;
-      // no errors
-//      boost::system::error_code no_error;
-//      BOOST_REQUIRE_MESSAGE(ec == no_error, ec.message());
-//
-//      // html is here
-//      const bool is_html = std::string::npos != html.find("<html>")
-//         || std::string::npos != html.find("<HTML>");
-//      BOOST_REQUIRE_EQUAL(is_html, true);
+
+      // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
+      std::string html_board;
+
+      htmlcxx::HTML::ParserDom parser;
+      tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
+      tree<htmlcxx::HTML::Node>::iterator it = dom.begin();
+      tree<htmlcxx::HTML::Node>::iterator end = dom.end();
+      for (; it != end; ++it)
+      {
+         if (it->tagName() == "param")
+         {
+            it->parseAttributes();
+            if ("FlashVars" == it->attribute("name").second)
+            {
+               html_board = it->attribute("value").second;
+            }
+         }
+      }
+
+      // split to x, y and board
+      std::vector<std::string> strs;
+      boost::split(strs, html_board, boost::is_any_of("&"));
+      std::copy(strs.begin(), strs.end(), std::ostream_iterator<std::string>(std::cout, " "));
    }
 };
 

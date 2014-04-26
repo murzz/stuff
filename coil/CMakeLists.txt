@@ -12,5 +12,5 @@ target_link_libraries(coil ${Boost_LIBRARIES})
 
 include(CTest)
 add_executable(tests src/tests.cpp)
-target_link_libraries(tests ${Boost_LIBRARIES} curl)
+target_link_libraries(tests ${Boost_LIBRARIES} curl htmlcxx)
 add_test(tests tests)

@@ -73,13 +73,13 @@ BOOST_AUTO_TEST_CASE( create_large_x_board )
    BOOST_REQUIRE_NO_THROW(coil::board(x, y, squares));
 }
 
-BOOST_AUTO_TEST_CASE( very_large_board )
-{
-   const size_t x = 9999;
-   const size_t y = 19999;
-   const std::string squares(x * y, '.');
-   BOOST_REQUIRE_NO_THROW(coil::board(x, y, squares));
-}
+//BOOST_AUTO_TEST_CASE( very_large_board )
+//{
+//   const size_t x = 9999;
+//   const size_t y = 19999;
+//   const std::string squares(x * y, '.');
+//   BOOST_REQUIRE_NO_THROW(coil::board(x, y, squares));
+//}
 
 BOOST_AUTO_TEST_CASE( zero_widht_board )
 {
