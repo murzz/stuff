@@ -1,29 +1,26 @@
-//#include <iostream>
 #include <cstdlib>
+#include <boost/asio.hpp>
+#include "cmdline-parser.hpp"
 
-#include "board.hpp"
-#include "parser.hpp"
-#include "solver.hpp"
+void error_handler(const boost::system::error_code & ec)
+{
+   (ec ? std::cerr : std::cout) << ec.message() << std::endl;
+}
 
 int main(int argc, char** argv)
 {
-   size_t x = 0;
-   size_t y = 0;
-   std::string board_str;
+   boost::asio::io_service ios;
 
-   try
-   {
-      parse(argc, argv, x, y, board_str);
-   }
-   catch (const board_not_parsed&)
-   {
-      return EXIT_FAILURE;
-   }
+   typedef boost::function<void(const boost::system::error_code &)> error_handler_type;
+   error_handler_type eh = boost::bind(error_handler, boost::asio::placeholders::error);
+   ios.post(
+      boost::bind(parse<boost::tuple<error_handler_type> >, argc, argv, boost::make_tuple(eh)));
 
-   board board(x, y, board_str);
-//std::copy(board.board_.begin(), board.board_.end(),
-   //          std::ostream_iterator<board::square_type>(std::cout));
+//   ios.post(
+//      boost::bind(parse<boost::tuple<boost::function<void(const boost::system::error_code &)>>>,
+//   argc, argv,
+//   boost::make_tuple(boost::bind(error_handler, boost::asio::placeholders::error))));
 
-   solve(board);
+   ios.run();
    return EXIT_SUCCESS;
 }

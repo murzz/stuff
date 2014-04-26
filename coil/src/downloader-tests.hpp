@@ -19,7 +19,6 @@ void ok_handler(const boost::system::error_code & ec, const std::string & html)
 BOOST_AUTO_TEST_CASE( download_html )
 {
    boost::asio::io_service io_service;
-   //boost::asio::io_service::work work(io_service);
    downloader downloader(io_service);
    const std::string url = "http://google.com";
    downloader.get_content(url, boost::bind(ok_handler, _1, _2));
