@@ -3,5 +3,5 @@
 
 //#include "parser-tests.hpp"
 #include "board-tests.hpp"
-#include "downloader-tests.hpp"
+#include "curl-tests.hpp"
 

@@ -2,7 +2,7 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "downloader.hpp"
+#include "curl.hpp"
 
 void ok_handler(const boost::system::error_code & ec, const std::string & html)
 {

@@ -175,4 +175,9 @@ public:
 
 };
 
+class uploader
+{
+
+};
+
 } //namespace curl

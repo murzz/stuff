@@ -9,7 +9,7 @@
 
 #include <htmlcxx/html/ParserDom.h>
 
-#include "downloader.hpp"
+#include "curl.hpp"
 
 namespace coil
 {
