@@ -3,51 +3,84 @@
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
+#include <boost/shared_ptr.hpp>
 #include "board.hpp"
+#include "curl.hpp"
+
+namespace cmdline
+{
+// fw decl
+template<typename Handler>
+void parse(boost::asio::io_service & io_service, Handler handler, int argc, char ** argv,
+   boost::shared_ptr<std::stringstream> config_data);
+
+namespace internal
+{
+template<typename Handler>
+struct helper
+{
+   typedef boost::function<
+      void(boost::asio::io_service & io_service, Handler handler, int argc, char ** argv,
+         boost::shared_ptr<std::stringstream> config_data)> parse_type;
+};
+
+struct options
+{
+   std::size_t x_;
+   std::size_t y_;
+   std::string board_;
+
+   std::string url_;
+   std::string name_;
+   std::string pass_;
+};
 
 /// perform actions defined by command line
-template<typename ErrorHandler>
-void perform(boost::asio::io_service & ios, const boost::program_options::variables_map & vm,
-   ErrorHandler handler)
+template<typename Handler>
+void perform(boost::asio::io_service & io_service, Handler handler,   options options)
 {
-//   for (const auto & p : vm)
-//   {
-//      std::cout << p.first.c_str();
-//      std::cout << "=";
-//      std::cout << boost::any_cast<std::string>(p.second.value());
-//      std::cout << std::endl;
-//   }
-
-   std::cout << vm["name"].as<std::string>() << std::endl;
-   return;
-   if (vm.count("x") && vm.count("y") && vm.count("board"))
+   if (options.x_ && options.y_ && !options.board_.empty())
    {
-      // solve board
-      //ios.post();
-      //throw board_not_parsed();
+      // board parsed, call handler
+      coil::board board(options.x_, options.y_, options.board_);
+      io_service.post(boost::bind(handler.template get<0>(), board));
+   }
+   else if (!options.url_.empty() && !options.name_.empty() && !options.pass_.empty())
+   {
+      //download board, then it will be parsed during general flow
+
+      const std::string url = options.url_ + "?name=" + options.name_ + "&password="
+         + options.pass_;
+
+      typedef typename helper<Handler>::parse_type parse_type;
+      parse_type parse_functor = boost::bind(::cmdline::parse<Handler>, boost::ref(io_service),
+         handler, 0, nullptr, _5);
+
+      io_service.post(
+         boost::bind(curl::download<boost::tuple<parse_type, Handler> >, boost::ref(io_service),
+            boost::make_tuple(parse_functor, handler), url));
    }
    else
    {
-      // download board
-
-//      const std::string url = std::string("http://www.hacker.org/coil/index.php")
-//         + "?name=" + vm["name"].value() + "&password=" + vm["pass"].value();
-
-      // coil::board board(ios, url);
+      // nothing to do
+      throw std::invalid_argument(
+         "Either Board options or Account options should be defined. Try --help option.");
    }
 }
+} //namespace internal
 
-/// parse command line
-template<typename ErrorHandler>
-void parse(boost::asio::io_service & ios, int argc, char ** argv, ErrorHandler handler)
+template<typename Handler>
+void parse(boost::asio::io_service & io_service, Handler handler, int argc, char ** argv,
+   boost::shared_ptr<std::stringstream> config_data)
 {
    namespace po = boost::program_options;
+   internal::options options;
 
-   // prefix for env vars
+// prefix for env vars
    const std::string prefix = "hacker_org_";
-   const std::string base_url = "http://www.hacker.org/coil/index.php";
+   const std::string url_template = "http://www.hacker.org/coil/index.php";
 
-   // define options
+// define options
    std::string config_file_name;
    po::options_description general_options("General options");
    general_options.add_options()
@@ -58,35 +91,36 @@ void parse(boost::asio::io_service & ios, int argc, char ** argv, ErrorHandler h
 
    po::options_description board_options("Board options");
    board_options.add_options()
-   ("x", "set board width") // name forced to be able to read from file
-   ("y", "set board height")
-   ("board,b", "defines board itself as a string of 'X's and '.'s (set of squares)");
+   ("x", po::value<std::size_t>(&options.x_), "set board width") // name forced to be able to read from file
+   ("y", po::value<std::size_t>(&options.y_), "set board height")
+   ("board,b", po::value<std::string>(&options.board_),
+      "defines board itself as a string of 'X's and '.'s (set of squares)");
 
    po::options_description account_options("Account options");
    account_options.add_options()
-      ("url,u",
-         po::value<std::string>()->default_value(base_url), "base URL to be used for GET and POST requests"),
-      ("name,n",
-         ("registered user name at hacker.org (could be env var prefixed with '" + prefix + "')").c_str()),
-      ("password,p",
-         std::string("password (could be env var prefixed with '" + prefix + "')").c_str());
+   ("url,u",
+      po::value<std::string>()->default_value(url_template),
+      "URL template to be used for GET request")
+   ("name,n", po::value<std::string>(&options.name_),
+      ("registered user name at hacker.org (could be env var prefixed with '" + prefix + "')").c_str())
+   ("password,p", po::value<std::string>(&options.pass_),
+      ("password (could be env var prefixed with '" + prefix + "')").c_str());
 
-   // put options together
+// put options together
    po::options_description cmdline_options;
    cmdline_options.add(general_options).add(board_options).add(account_options);
 
    po::variables_map vm;
 
-   // get options defined in command line
-   po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
+// get options defined in command line
+   if (argc)
+   {
+      po::store(po::parse_command_line(argc, argv, cmdline_options), vm);
+   }
 
    if (/*vm.empty() ||*/vm.count("help"))
    {
       std::cout << general_options << board_options << account_options << std::endl;
-
-      // return with no error
-      boost::system::error_code ec;
-      handler.template get<0>()(ec);
       return;
    }
 
@@ -94,10 +128,16 @@ void parse(boost::asio::io_service & ios, int argc, char ** argv, ErrorHandler h
    {
       //TODO: implement version
       std::cout << "not implemented" << std::endl;
+      return;
+   }
 
-      // return with no error
-      boost::system::error_code ec;
-      handler.template get<0>()(ec);
+// get options defined in stream file
+   if (config_data.get())
+   {
+//TODO do we need notify here?
+
+      po::notify(vm);
+      po::store(po::parse_config_file(*config_data, board_options), vm);
    }
 
    if (vm.count("file"))
@@ -108,13 +148,14 @@ void parse(boost::asio::io_service & ios, int argc, char ** argv, ErrorHandler h
          (config_file_name.c_str(), board_options), vm);
    }
 
-   // get options defined as env vars, these should be prefixed with prefix
+// get options defined as env vars, these should be prefixed with prefix
    po::store(po::parse_environment(account_options, prefix), vm);
 
-   // final notify
+// final notify
    po::notify(vm);
 
-   // next action
-   ios.post(boost::bind(perform<ErrorHandler>, boost::ref(ios), vm, handler));
+// next action
+   io_service.post(boost::bind(internal::perform<Handler>, boost::ref(io_service), handler, options));
 }
 
+} //namespace cmdline

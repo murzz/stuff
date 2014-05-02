@@ -1,9 +1,13 @@
 #pragma once
 
+#include <algorithm>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <curl/curl.h>
+#include <htmlcxx/html/ParserDom.h>
 
 namespace curl
 {
@@ -56,6 +60,173 @@ inline static boost::system::error_code make_error_code(CURLcode e)
 }
 
 } // namespace error
+
+namespace internal
+{
+
+struct write_data
+{
+   std::string html_;
+   write_data()
+   {
+      std::cout << __func__ << std::endl;
+   }
+   write_data(const write_data& that)
+   {
+      html_ = that.html_;
+      std::cout << __func__ << std::endl;
+   }
+   ~write_data()
+   {
+      std::cout << __func__ << std::endl;
+   }
+   void operator=(const write_data& that)
+   {
+      std::cout << __func__ << std::endl;
+      html_ = that.html_;
+   }
+};
+
+static size_t write_data_handler(void *ptr, size_t size, size_t nmemb, write_data * p)
+{
+   std::string content(static_cast<std::string::value_type*>(ptr), size * nmemb);
+   //**p += content;
+   //(*p)->operator +=(content);
+   //(*p)->html_ += content;
+   p->html_ += content;
+   return content.size();
+}
+
+void cleanup(const boost::system::error_code & ec, CURL * curl)
+{
+   if (curl)
+   {
+      curl_easy_cleanup(curl);
+   }
+
+   if (ec)
+   {
+      throw ec;
+   }
+}
+
+void html_board_parser(const std::string & html, std::stringstream & ss)
+{
+   // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
+   std::string html_board;
+
+   htmlcxx::HTML::ParserDom parser;
+   tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
+   tree<htmlcxx::HTML::Node>::iterator it = dom.begin();
+   tree<htmlcxx::HTML::Node>::iterator end = dom.end();
+   for (; it != end; ++it)
+   {
+      if (it->tagName() == "param")
+      {
+         it->parseAttributes();
+         if ("FlashVars" == it->attribute("name").second)
+         {
+            html_board = it->attribute("value").second;
+         }
+      }
+   }
+
+   // split to x, y and board
+   // std::vector<std::string> strs;
+//   boost::split(strs, html_board, boost::is_any_of("&"));
+   //std::copy(strs.begin(), strs.end(), std::ostream_iterator<std::string>(std::cout, " "));
+
+   std::replace(html_board.begin(), html_board.end(), '&', '\n');
+
+   ss << html_board;
+}
+
+template<typename Handler>
+void perform(boost::asio::io_service & io_service, Handler handler, CURL * curl,
+   write_data * html)
+{
+   // would block and do the job
+   // this would eliminate all asio fun though
+   const CURLcode res = curl_easy_perform(curl);
+   if (CURLE_OK == res)
+   {
+      // success
+      const boost::system::error_code ec;
+      io_service.post(boost::bind(cleanup, ec, curl));
+
+      boost::shared_ptr<std::stringstream> ss(boost::make_shared<std::stringstream>());
+      //TODO post it to io service
+      html_board_parser(html->html_, *ss.get());
+
+//      boost::shared_ptr<std::stringstream> ss(boost::make_shared<std::stringstream>(html->c_str()));
+
+      io_service.post(
+         boost::bind(handler.template get<0>(), boost::ref(io_service), handler.template get<1>(),
+            0, nullptr, ss));
+   }
+   else
+   {
+      io_service.post(boost::bind(cleanup, error::make_error_code(res), curl));
+   }
+}
+
+template<typename Handler>
+void setopt(boost::asio::io_service & io_service, Handler handler, const std::string & url,
+   CURL * curl)
+{
+   CURLcode res = CURLE_OK;
+   res = curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+   if (CURLE_OK != res)
+   {
+      io_service.post(boost::bind(cleanup, error::make_error_code(res), curl));
+      return;
+   }
+
+   res = curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, &write_data_handler);
+   if (CURLE_OK != res)
+   {
+      io_service.post(boost::bind(cleanup, error::make_error_code(res), curl));
+      return;
+   }
+
+   //TODO make use of shared_ptr
+   //boost::shared_ptr<std::string> html(boost::make_shared<std::string>());
+   //boost::shared_ptr<write_data_handler> html(boost::make_shared<write_data_handler>());
+   write_data * html = new write_data;
+
+   res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, html);
+   if (CURLE_OK != res)
+   {
+      io_service.post(boost::bind(cleanup, error::make_error_code(res), curl));
+      return;
+   }
+
+   io_service.post(
+      boost::bind(perform<Handler>, boost::ref(io_service), handler, curl, html));
+}
+
+template<typename Handler>
+void init(boost::asio::io_service & io_service, Handler handler, const std::string & url)
+{
+   CURL * curl = curl_easy_init();
+   if (curl)
+   {
+      io_service.post(boost::bind(setopt<Handler>, boost::ref(io_service), handler, url, curl));
+   }
+   else
+   {
+      throw boost::asio::error::make_error_code(boost::asio::error::invalid_argument);
+   }
+}
+
+} //namespace internal
+
+template<typename Handler>
+void download(boost::asio::io_service & io_service, Handler handler, const std::string & url)
+{
+   io_service.post(
+      boost::bind(internal::init<Handler>, boost::ref(io_service), handler, url));
+}
 
 class downloader
 {

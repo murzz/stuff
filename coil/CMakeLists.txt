@@ -4,7 +4,7 @@ project(coil)
 
 add_definitions("-std=c++0x -std=c++11")
 
-find_package(Boost COMPONENTS system program_options unit_test_framework REQUIRED)
+find_package(Boost COMPONENTS system program_options unit_test_framework thread REQUIRED)
 find_package(CURL REQUIRED)
 
 set( COIL_INCLUDE_DIRS
