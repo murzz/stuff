@@ -3,13 +3,13 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-#include <algorithm>
+//#include <algorithm>
 
-#include <boost/algorithm/string.hpp>
+//#include <boost/algorithm/string.hpp>
 
-#include <htmlcxx/html/ParserDom.h>
+//#include <htmlcxx/html/ParserDom.h>
 
-#include "curl.hpp"
+//#include "curl.hpp"
 
 namespace coil
 {
@@ -86,11 +86,11 @@ public:
       squares_ = squares;
    }
 
-   board(boost::asio::io_service & ios, const std::string & url)
-   {
-      downloader_.reset(new curl::downloader(ios));
-      downloader_->get_content(url, boost::bind(&board::html_handler, this, _1, _2));
-   }
+//   board(boost::asio::io_service & ios, const std::string & url)
+//   {
+//      downloader_.reset(new curl::downloader(ios));
+//      downloader_->get_content(url, boost::bind(&board::html_handler, this, _1, _2));
+//   }
 
    bool operator==(const board & rhs) const
 
@@ -105,42 +105,42 @@ public:
    }
 
 private:
-   boost::shared_ptr<curl::downloader> downloader_;
+   //boost::shared_ptr<curl::downloader> downloader_;
    size_t width_;
    size_t height_;
    squares squares_;
 
-   void html_handler(const boost::system::error_code & ec, const std::string & html)
-   {
-      if (ec)
-      {
-         throw ec;
-      }
-
-      // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
-      std::string html_board;
-
-      htmlcxx::HTML::ParserDom parser;
-      tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
-      tree<htmlcxx::HTML::Node>::iterator it = dom.begin();
-      tree<htmlcxx::HTML::Node>::iterator end = dom.end();
-      for (; it != end; ++it)
-      {
-         if (it->tagName() == "param")
-         {
-            it->parseAttributes();
-            if ("FlashVars" == it->attribute("name").second)
-            {
-               html_board = it->attribute("value").second;
-            }
-         }
-      }
-
-      // split to x, y and board
-      std::vector<std::string> strs;
-      boost::split(strs, html_board, boost::is_any_of("&"));
-      std::copy(strs.begin(), strs.end(), std::ostream_iterator<std::string>(std::cout, " "));
-   }
+//   void html_handler(const boost::system::error_code & ec, const std::string & html)
+//   {
+//      if (ec)
+//      {
+//         throw ec;
+//      }
+//
+//      // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
+//      std::string html_board;
+//
+//      htmlcxx::HTML::ParserDom parser;
+//      tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
+//      tree<htmlcxx::HTML::Node>::iterator it = dom.begin();
+//      tree<htmlcxx::HTML::Node>::iterator end = dom.end();
+//      for (; it != end; ++it)
+//      {
+//         if (it->tagName() == "param")
+//         {
+//            it->parseAttributes();
+//            if ("FlashVars" == it->attribute("name").second)
+//            {
+//               html_board = it->attribute("value").second;
+//            }
+//         }
+//      }
+//
+//      // split to x, y and board
+//      std::vector<std::string> strs;
+//      boost::split(strs, html_board, boost::is_any_of("&"));
+//      std::copy(strs.begin(), strs.end(), std::ostream_iterator<std::string>(std::cout, " "));
+//   }
 };
 
 }
