@@ -62,9 +62,14 @@ int main(int argc, char** argv)
       std::size_t handlers_count = io_service.run();
       std::cout << handlers_count << " handler(s) were executed" << std::endl;
    }
-   catch (const std::exception& e)
+   catch (const std::exception & e)
    {
       std::cerr << e.what() << std::endl;
+      return EXIT_FAILURE;
+   }
+   catch (const boost::system::error_code & ec)
+   {
+      std::cerr << ec.message() << std::endl;
       return EXIT_FAILURE;
    }
    return EXIT_SUCCESS;

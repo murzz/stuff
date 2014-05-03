@@ -7,7 +7,6 @@
 #include <boost/bind.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <curl/curl.h>
-#include <htmlcxx/html/ParserDom.h>
 
 namespace curl
 {
@@ -110,37 +109,6 @@ void cleanup(const boost::system::error_code & ec, CURL * curl)
    }
 }
 
-void html_board_parser(const std::string & html, std::stringstream & ss)
-{
-   // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
-   std::string html_board;
-
-   htmlcxx::HTML::ParserDom parser;
-   tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
-   tree<htmlcxx::HTML::Node>::iterator it = dom.begin();
-   tree<htmlcxx::HTML::Node>::iterator end = dom.end();
-   for (; it != end; ++it)
-   {
-      if (it->tagName() == "param")
-      {
-         it->parseAttributes();
-         if ("FlashVars" == it->attribute("name").second)
-         {
-            html_board = it->attribute("value").second;
-         }
-      }
-   }
-
-   // split to x, y and board
-   // std::vector<std::string> strs;
-//   boost::split(strs, html_board, boost::is_any_of("&"));
-   //std::copy(strs.begin(), strs.end(), std::ostream_iterator<std::string>(std::cout, " "));
-
-   std::replace(html_board.begin(), html_board.end(), '&', '\n');
-
-   ss << html_board;
-}
-
 template<typename Handler>
 void perform(boost::asio::io_service & io_service, Handler handler, CURL * curl,
    write_data * html)
@@ -154,15 +122,14 @@ void perform(boost::asio::io_service & io_service, Handler handler, CURL * curl,
       const boost::system::error_code ec;
       io_service.post(boost::bind(cleanup, ec, curl));
 
-      boost::shared_ptr<std::stringstream> ss(boost::make_shared<std::stringstream>());
-      //TODO post it to io service
-      html_board_parser(html->html_, *ss.get());
-
+//      boost::shared_ptr<std::stringstream> ss(boost::make_shared<std::stringstream>());
 //      boost::shared_ptr<std::stringstream> ss(boost::make_shared<std::stringstream>(html->c_str()));
-
+//      io_service.post(
+//         boost::bind(handler.template get<0>(), boost::ref(io_service), handler.template get<1>(),
+//            0, nullptr, ss));
       io_service.post(
          boost::bind(handler.template get<0>(), boost::ref(io_service), handler.template get<1>(),
-            0, nullptr, ss));
+            html->html_));
    }
    else
    {
