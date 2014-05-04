@@ -116,6 +116,8 @@ BOOST_FIXTURE_TEST_CASE( download_wrong_host_check_type, test_helpers::worker )
    }
 }
 
+#ifndef DISABLE_LONG_TESTS
+
 BOOST_FIXTURE_TEST_CASE( download_no_connection, test_helpers::worker )
 {
    // this test runs long time
@@ -133,4 +135,6 @@ BOOST_FIXTURE_TEST_CASE( download_no_connection, test_helpers::worker )
       BOOST_REQUIRE_EQUAL(ec, no_host);
    }
 }
+
+#endif // #ifndef DISABLE_LONG_TESTS
 

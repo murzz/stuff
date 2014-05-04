@@ -14,9 +14,9 @@ compare_boards(const coil::board & l1, const coil::board & l2)
       return true;
    }
 
-   boost::test_tools::predicate_result res(false);
-   res.message() << "boards not equal";
-   return res;
+   boost::test_tools::predicate_result is_equal(false);
+   is_equal.message() << "boards are not equal";
+   return is_equal;
 }
 
 BOOST_AUTO_TEST_CASE( compare_empty_boards )
@@ -73,49 +73,29 @@ BOOST_AUTO_TEST_CASE( create_large_x_board )
    BOOST_REQUIRE_NO_THROW(coil::board(x, y, squares));
 }
 
-//BOOST_AUTO_TEST_CASE( very_large_board )
-//{
-//   const size_t x = 9999;
-//   const size_t y = 19999;
-//   const std::string squares(x * y, '.');
-//   BOOST_REQUIRE_NO_THROW(coil::board(x, y, squares));
-//}
+#ifndef DISABLE_LONG_TESTS
+
+BOOST_AUTO_TEST_CASE( very_large_board )
+{
+   const size_t x = 9999;
+   const size_t y = 19999;
+   const std::string squares(x * y, '.');
+   BOOST_REQUIRE_NO_THROW(coil::board(x, y, squares));
+}
+
+#endif // #ifndef DISABLE_LONG_TESTS
 
 BOOST_AUTO_TEST_CASE( zero_widht_board )
 {
-   BOOST_REQUIRE_THROW(coil::board(0, 1, "X"), std::logic_error);
+   BOOST_REQUIRE_THROW(coil::board(0, 1, "X"), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE( wrong_cell_symbol_board )
 {
-   BOOST_REQUIRE_THROW(coil::board(1, 1, "A"), std::runtime_error);
+   BOOST_REQUIRE_THROW(coil::board(1, 1, "A"), std::invalid_argument);
 }
 
 BOOST_AUTO_TEST_CASE( dimension_and_size_mismatch )
 {
-   BOOST_REQUIRE_THROW(coil::board(100, 1, "X"), std::logic_error);
+   BOOST_REQUIRE_THROW(coil::board(100, 1, "X"), std::invalid_argument);
 }
-
-//BOOST_AUTO_TEST_CASE( download_board )
-//{
-//   char* name_env = std::getenv("name");
-//   BOOST_REQUIRE(nullptr != name_env);
-//
-//   char* pass_env = std::getenv("pass");
-//   BOOST_REQUIRE(nullptr != pass_env);
-//
-//   const std::string name = std::string("name=") + std::string(name_env);
-//   const std::string pass = std::string("password=") + std::string(pass_env);
-//
-//   const std::string url = std::string("http://www.hacker.org/coil/index.php")
-//      + "?" + name + "&" + pass;
-//
-//   boost::asio::io_service ios;
-//
-//   // make it dynamic to enable no throw check in constructor via macro.
-//   // object will be destroyed when leaving scope of macro
-//   // no tasks will be left for ios then
-//   boost::scoped_ptr<coil::board> board;
-//   BOOST_REQUIRE_NO_THROW(board.reset(new coil::board(ios, url)));
-//   BOOST_REQUIRE_NO_THROW(ios.run());
-//}

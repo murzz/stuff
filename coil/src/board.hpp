@@ -3,13 +3,6 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
-//#include <algorithm>
-
-//#include <boost/algorithm/string.hpp>
-
-//#include <htmlcxx/html/ParserDom.h>
-
-//#include "curl.hpp"
 
 namespace coil
 {
@@ -19,53 +12,22 @@ class board
 
 public:
 
-   enum class square
+   enum class cell
    {
       empty = '.',
-      wall = 'X'
+      wall = 'X',
    };
 
-   class squares: public std::vector<board::square>
+   enum class step
    {
-
-   public:
-      squares()
-      {
-      }
-
-      squares(const std::string& squares)
-      {
-         *this = squares;
-      }
-
-      squares& operator=(const std::string& squares)
-      {
-         copy_from(squares);
-         return *this;
-      }
-
-   private:
-      void copy_from(const std::string& squares)
-      {
-         this->clear();
-
-         //std::for_each(squares.begin(), squares.end(), [](const std::string::value_type& square_str)
-         for (const auto& symbol : squares)
-         {
-            board::square square = static_cast<board::square>(symbol);
-            switch (square)
-            {
-               case board::square::empty:
-                  case board::square::wall:
-                  this->push_back(square);
-                  break;
-               default:
-                  throw std::runtime_error("wrong square");
-            }
-         }
-         // );
-      }
+      up = 'U',
+      down = 'D',
+      left = 'L',
+      right = 'R',
    };
+
+   typedef std::vector<cell> cells;
+   typedef std::vector<step> path;
 
    board() :
       width_(0), height_(0)
@@ -73,29 +35,24 @@ public:
 
    }
 
-   board(const size_t& width, const size_t & height, const std::string & squares)
+   board(const size_t& width, const size_t & height, const std::string & cells)
    {
       // check board size
-      if (width * height != squares.size())
+      if (width * height != cells.size())
       {
-         throw std::logic_error("board size mismatch");
+         throw std::invalid_argument("board size mismatch");
       }
 
       width_ = width;
       height_ = height;
-      squares_ = squares;
+      //cells_ = cells;
+      convert(cells_, cells);
    }
-
-//   board(boost::asio::io_service & ios, const std::string & url)
-//   {
-//      downloader_.reset(new curl::downloader(ios));
-//      downloader_->get_content(url, boost::bind(&board::html_handler, this, _1, _2));
-//   }
 
    bool operator==(const board & rhs) const
 
    {
-      return width_ == rhs.width_ && height_ == rhs.height_ && squares_ == rhs.squares_;
+      return width_ == rhs.width_ && height_ == rhs.height_ && cells_ == rhs.cells_;
    }
 
    bool operator!=(const board & rhs) const
@@ -105,42 +62,31 @@ public:
    }
 
 private:
-   //boost::shared_ptr<curl::downloader> downloader_;
    size_t width_;
    size_t height_;
-   squares squares_;
+   cells cells_;
+   path path_;
 
-//   void html_handler(const boost::system::error_code & ec, const std::string & html)
-//   {
-//      if (ec)
-//      {
-//         throw ec;
-//      }
-//
-//      // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
-//      std::string html_board;
-//
-//      htmlcxx::HTML::ParserDom parser;
-//      tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
-//      tree<htmlcxx::HTML::Node>::iterator it = dom.begin();
-//      tree<htmlcxx::HTML::Node>::iterator end = dom.end();
-//      for (; it != end; ++it)
-//      {
-//         if (it->tagName() == "param")
-//         {
-//            it->parseAttributes();
-//            if ("FlashVars" == it->attribute("name").second)
-//            {
-//               html_board = it->attribute("value").second;
-//            }
-//         }
-//      }
-//
-//      // split to x, y and board
-//      std::vector<std::string> strs;
-//      boost::split(strs, html_board, boost::is_any_of("&"));
-//      std::copy(strs.begin(), strs.end(), std::ostream_iterator<std::string>(std::cout, " "));
-//   }
+   void convert(cells & t, const std::string & string)
+   {
+      t.clear();
+
+      for (const auto & value : string)
+      {
+         static_assert( boost::is_enum< cells::value_type >::value, "Not an enum" );
+
+         cells::value_type cell = static_cast<cells::value_type>(value);
+         switch (cell)
+         {
+            case board::cell::empty:
+               case board::cell::wall:
+               t.push_back(cell);
+               break;
+            default:
+               throw std::invalid_argument("Wrong cell value");
+         }
+      }
+   }
 };
 
-}
+} // namespace coil
