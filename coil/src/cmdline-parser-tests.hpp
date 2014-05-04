@@ -24,20 +24,20 @@
 //
 //}
 
-BOOST_AUTO_TEST_CASE( version_option_test )
-{
-   size_t x = 0;
-   size_t y = 0;
-   std::string squares;
-
-   std::array<char const*, 2> argv =
-      {
-         { "program_name", "-v" }
-      };
-
+//BOOST_AUTO_TEST_CASE( version_option_test )
+//{
+//   size_t x = 0;
+//   size_t y = 0;
+//   std::string squares;
+//
+//   std::array<char const*, 2> argv =
+//      {
+//         { "dummy_binary_name", "-v" }
+//      };
+//
 //   BOOST_REQUIRE_THROW(parse(argv.size(), argv.data(), x, y, squares),
 //      board_not_parsed);
-}
+//}
 
 //BOOST_AUTO_TEST_CASE( help_option_test )
 //{
