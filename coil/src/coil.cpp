@@ -4,38 +4,9 @@
 #include "cmdline-parser.hpp"
 #include "board.hpp"
 
-//class worker
-//{
-//public:
-//   worker(int argc, char** argv)
-//   {
-////      typedef boost::function<void(const boost::system::error_code &)> error_handler_type;
-////      error_handler_type eh = boost::bind(&worker::error_handler, this,
-////         boost::asio::placeholders::error);
-////      ios.post(
-////         boost::bind(parse<boost::tuple<error_handler_type> >, boost::ref(ios), argc, argv,
-////            boost::make_tuple(eh)));
-//      ios.post(boost::bind(parse, boost::ref(ios), argc, argv));
-//      ios.run();
-//   }
-//
-//private:
-//   boost::asio::io_service ios;
-//   // here we can instantiate curl::downloader, board etc..
-//
-//   void error_handler(const boost::system::error_code & ec)
-//   {
-//      //(ec ? std::cerr : std::cout) << ec.message() << std::endl;
-//      if (ec)
-//      {
-//         std::cerr << ec.message() << std::endl;
-//      }
-//   }
-//};
-
-void board_handler(coil::board board)
+void board_handler(const coil::board & board)
 {
-   std::cout << __func__ << std::endl;
+   std::cout << board << std::endl;
 // solve it here
 }
 

@@ -61,6 +61,8 @@ public:
       return !(*this == rhs);
    }
 
+   friend std::ostream & operator<<(std::ostream & os, const board & rhs);
+
 private:
    size_t width_;
    size_t height_;
@@ -79,7 +81,9 @@ private:
          switch (cell)
          {
             case board::cell::empty:
-               case board::cell::wall:
+
+            case board::cell::wall:
+
                t.push_back(cell);
                break;
             default:
@@ -88,5 +92,23 @@ private:
       }
    }
 };
+
+std::ostream & operator<<(std::ostream & os, const board::cells & cells)
+{
+   for (const auto & cell : cells)
+   {
+      os << static_cast<std::string::value_type>(cell);
+   }
+   //  std::copy(rhs.begin(), rhs.end(), std::ostream_iterator<board::cells::value_type>(os, " "));
+   return os;
+}
+
+std::ostream & operator<<(std::ostream & os, const board & rhs)
+{
+   os << "width = " << rhs.width_;
+   os << ", height = " << rhs.height_;
+   os << ", board = " << rhs.cells_;
+   return os;
+}
 
 } // namespace coil
