@@ -107,7 +107,7 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
 {
    os << "width = " << rhs.width_;
    os << ", height = " << rhs.height_;
-   os << ", board = " << rhs.cells_;
+   os << ", cells = " << rhs.cells_;
    return os;
 }
 

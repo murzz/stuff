@@ -99,3 +99,18 @@ BOOST_AUTO_TEST_CASE( dimension_and_size_mismatch )
 {
    BOOST_REQUIRE_THROW(coil::board(100, 1, "X"), std::invalid_argument);
 }
+
+BOOST_AUTO_TEST_CASE( create_and_ostream_board )
+{
+   const std::size_t width = 5, height = 3;
+   const std::string cells = "......X......X.";
+   coil::board b(width, height, cells);
+
+   std::stringstream expected;
+   expected << "width = " << width << ", height = " << height << ", cells = " << cells;
+
+   std::stringstream received;
+   received << b;
+
+   BOOST_REQUIRE_EQUAL(received.str(), expected.str());
+}
