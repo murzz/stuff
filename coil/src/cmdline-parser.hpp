@@ -70,7 +70,11 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
 
    if (html_board.empty())
    {
-      throw std::invalid_argument("Required attributes not found in html");
+      std::string err = "Required attributes not found in html";
+#ifdef DEBUG
+      err += ": " + html;
+#endif
+      throw std::invalid_argument(err.c_str());
    }
 
    // split to x, y and board

@@ -63,36 +63,37 @@ inline static boost::system::error_code make_error_code(CURLcode e)
 namespace internal
 {
 
-struct write_data
+//#define DEBUG
+#ifdef DEBUG
+struct write_data: public std::string
 {
-   std::string html_;
    write_data()
    {
-      std::cout << __func__ << std::endl;
+      std::cout << __func__ << " default" << std::endl;
    }
    write_data(const write_data& that)
    {
-      html_ = that.html_;
-      std::cout << __func__ << std::endl;
+      std::cout << __func__ << " copy" << std::endl;
+      *this = that;
    }
    ~write_data()
    {
       std::cout << __func__ << std::endl;
    }
-   void operator=(const write_data& that)
-   {
-      std::cout << __func__ << std::endl;
-      html_ = that.html_;
-   }
+//   void operator=(const write_data& that)
+//   {
+//      std::cout << __func__ << std::endl;
+//      std::string::operator =(that);
+//   }
 };
+#else
+typedef std::string write_data;
+#endif
 
 static size_t write_data_handler(void *ptr, size_t size, size_t nmemb, write_data * p)
 {
    std::string content(static_cast<std::string::value_type*>(ptr), size * nmemb);
-   //**p += content;
-   //(*p)->operator +=(content);
-   //(*p)->html_ += content;
-   p->html_ += content;
+   *p += content;
    return content.size();
 }
 
@@ -111,10 +112,10 @@ void cleanup(const boost::system::error_code & ec, CURL * curl)
 
 template<typename Handler>
 void perform(boost::asio::io_service & io_service, Handler handler, CURL * curl,
-   write_data * html)
+   boost::shared_ptr<write_data> html)
 {
    // would block and do the job
-   // this would eliminate all asio fun though
+   // this would ruin all asio fun though
    const CURLcode res = curl_easy_perform(curl);
    if (CURLE_OK == res)
    {
@@ -122,14 +123,10 @@ void perform(boost::asio::io_service & io_service, Handler handler, CURL * curl,
       const boost::system::error_code ec;
       io_service.post(boost::bind(cleanup, ec, curl));
 
-//      boost::shared_ptr<std::stringstream> ss(boost::make_shared<std::stringstream>());
-//      boost::shared_ptr<std::stringstream> ss(boost::make_shared<std::stringstream>(html->c_str()));
-//      io_service.post(
-//         boost::bind(handler.template get<0>(), boost::ref(io_service), handler.template get<1>(),
-//            0, nullptr, ss));
+      // html handler
       io_service.post(
          boost::bind(handler.template get<0>(), boost::ref(io_service), handler.template get<1>(),
-            html->html_));
+            *html));
    }
    else
    {
@@ -156,12 +153,9 @@ void setopt(boost::asio::io_service & io_service, Handler handler, const std::st
       return;
    }
 
-   //TODO make use of shared_ptr
-   //boost::shared_ptr<std::string> html(boost::make_shared<std::string>());
-   //boost::shared_ptr<write_data_handler> html(boost::make_shared<write_data_handler>());
-   write_data * html = new write_data;
+   boost::shared_ptr<write_data> html(boost::make_shared<write_data>());
 
-   res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, html);
+   res = curl_easy_setopt(curl, CURLOPT_WRITEDATA, html.get());
    if (CURLE_OK != res)
    {
       io_service.post(boost::bind(cleanup, error::make_error_code(res), curl));
@@ -318,4 +312,4 @@ void download(boost::asio::io_service & io_service, Handler handler, const std::
 //
 //};
 
-} //namespace curl
+}//namespace curl
