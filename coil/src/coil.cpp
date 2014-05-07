@@ -3,11 +3,11 @@
 #include <boost/asio/signal_set.hpp>
 #include "cmdline-parser.hpp"
 #include "board.hpp"
+#include "solver.hpp"
 
-void board_handler(const coil::board & board)
+void board_handler(boost::asio::io_service & io_service, const coil::board & board)
 {
-   std::cout << board << std::endl;
-// solve it here
+   io_service.post(boost::bind(solve, boost::ref(io_service), board));
 }
 
 int main(int argc, char** argv)
@@ -18,12 +18,12 @@ int main(int argc, char** argv)
 
       //TODO: run() will wait forever because of this work, need to find a way to cancel it on graceful exit (all handlers completed)
       // handle signals
-      //boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
-      //signals.async_wait(boost::bind(&boost::asio::io_service::stop, &io_service));
+      boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
+      signals.async_wait(boost::bind(&boost::asio::io_service::stop, &io_service));
 
       // parse command line
       typedef boost::function<void(coil::board board)> handler_type;
-      handler_type handler = boost::bind(board_handler, _1);
+      handler_type handler = boost::bind(board_handler, boost::ref(io_service), _1);
 
       io_service.post(
          boost::bind(cmdline::parse<boost::tuple<handler_type> >, boost::ref(io_service),

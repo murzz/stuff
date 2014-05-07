@@ -107,10 +107,22 @@ BOOST_AUTO_TEST_CASE( create_and_ostream_board )
    coil::board b(width, height, cells);
 
    std::stringstream expected;
-   expected << "width = " << width << ", height = " << height << ", cells = " << cells;
+   expected << "width = " << width
+      << ", height = " << height
+      << ", cells = " << cells
+      << ", path = , is solved? no :(";
 
    std::stringstream received;
    received << b;
 
    BOOST_REQUIRE_EQUAL(received.str(), expected.str());
+}
+
+BOOST_AUTO_TEST_CASE( is_board_solved )
+{
+   const std::size_t width = 5, height = 3;
+   const std::string cells = "......X......X.";
+   coil::board b(width, height, cells);
+
+   BOOST_REQUIRE_EQUAL(b.is_solved(), false);
 }
