@@ -4,6 +4,7 @@ project(coil)
 
 add_definitions("-std=c++0x -std=c++11")
 add_definitions(-DDISABLE_LONG_TESTS)
+add_definitions(-Wall)
 
 find_package(Boost COMPONENTS system program_options unit_test_framework thread REQUIRED)
 find_package(CURL REQUIRED)

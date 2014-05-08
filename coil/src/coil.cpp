@@ -18,8 +18,8 @@ int main(int argc, char** argv)
 
       //TODO: run() will wait forever because of this work, need to find a way to cancel it on graceful exit (all handlers completed)
       // handle signals
-      boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
-      signals.async_wait(boost::bind(&boost::asio::io_service::stop, &io_service));
+//      boost::asio::signal_set signals(io_service, SIGINT, SIGTERM);
+//      signals.async_wait(boost::bind(&boost::asio::io_service::stop, &io_service));
 
       // parse command line
       typedef boost::function<void(coil::board board)> handler_type;
