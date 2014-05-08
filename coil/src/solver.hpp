@@ -32,14 +32,41 @@ void move(boost::asio::io_service & io_service, coil::board board,
 //   io_service.post(boost::bind(&boost::asio::io_service::stop, &io_service));
 }
 
+void set_start_coord(coil::board & board)
+{
+   if (board.starting_coord_)
+   {
+      // already set
+      return;
+   }
+
+   // init starting coords
+   // define starting coords, could be random
+   board.starting_coord_ = coil::coord(0, 0);
+
+   // find sane point closest to starting coord
+   // this algo is looking by incrementing indexes
+   // so starting point should not be too close to the edge of the board, or it would fail
+   for (coil::coord::value_type x = board.starting_coord_->x_; x < board.width_; ++x)
+   {
+      board.starting_coord_->x_ = x;
+      for (coil::coord::value_type y = board.starting_coord_->y_; y < board.height_; ++y)
+      {
+         board.starting_coord_->y_ = y;
+         if (coil::board::cell::empty == board.get_cell(*board.starting_coord_))
+         {
+            break;
+         }
+      }
+   }
+
+   // set current coord so board::move would use it
+   board.current_coord_ = *board.starting_coord_;
+}
+
 void solve(boost::asio::io_service & io_service, coil::board board)
 {
-   if (!board.starting_coord_)
-   {
-      // define starting coords, could be random
-      board.starting_coord_->x = 0;
-      board.starting_coord_->y = 0;
-   }
+   set_start_coord(board);
 
    // move to all 4 directions
    coil::direction direction = coil::direction::up;

@@ -46,10 +46,11 @@ coil::direction & operator++(coil::direction & direction)
 
 struct coord
 {
-   size_t x;
-   size_t y;
-   coord() :
-      x(0), y(0)
+   typedef size_t value_type;
+   value_type x_;
+   value_type y_;
+   coord(const value_type & x = 0, const value_type & y = 0) :
+      x_(x), y_(y)
    {
 
    }
@@ -147,63 +148,60 @@ struct board
       coord new_coords = get_new_coords(direction);
       if (!is_sane(new_coords))
       {
+         // out of board
          return false;
       }
-      //  init();
-      ///@TODO update new x and y, detect walls, update path
-//
-//      const index_t current_idx = coordinates_to_index(x_, y_);
-//      if (!current_idx)
-//      {
-//         return false;
-//      }
-//
-//      size_t new_x = x_;
-//      size_t new_y = y_;
-//      //const index_t new_idx = move(step, x_, y_);
-//      if (!new_idx)
-//      {
-//         return false;
-//      }
 
-      bool moved = true;
-      return moved;
+      if (coil::board::cell::empty != get_cell(new_coords))
+      {
+         // not an empty cell
+         return false;
+      }
+
+      // move one step
+      current_coord_ = new_coords;
+
+      // try to move further the same direction
+      for (; move(direction);)
+      {
+         // move until bumped into something
+      }
+
+      // add direction to path
+      ///@TODO check if it was the only possible direction, if yes then do not add it.
+      path_.push_back(direction);
+
+      return true;
    }
 
-   coord get_new_coords(const direction & step)
+   coord get_new_coords(const coil::direction & direction)
    {
-
-      ///@TODO we should start either from starting_coord or from current_coord
       coord new_coord = current_coord_;
 
-      ///@TODO it should slide all cells until occupied space, instead of moving by cell like it is implemented now
-      // it could be done by recursive call to this method
-
-      //
-      switch (step)
+      switch (direction)
       {
-         case direction::up:
+         case coil::direction::up:
 
          {
-            new_coord.y--;
+            new_coord.y_--;
             break;
          }
-         case direction::down:
+         case coil::direction::down:
 
          {
-            new_coord.y++;
+            new_coord.y_++;
             break;
          }
-         case direction::left:
+         case coil::direction::left:
 
          {
-            new_coord.x--;
+            new_coord.x_--;
             break;
          }
-         case direction::right:
+         case coil::direction::right:
 
          {
-            new_coord.x++;
+            new_coord.x_++;
             break;
          }
          default:
@@ -215,7 +213,7 @@ struct board
       return new_coord;
    }
 
-   typedef boost::optional<size_t> index_t;
+   //typedef boost::optional<size_t> index_t;
 
    coord current_coord_;
 
@@ -224,7 +222,7 @@ struct board
    bool is_sane(const coord & coord) const
 
    {
-      return coord.x < width_ && coord.y < height_;
+      return coord.x_ < width_ && coord.y_ < height_;
    }
 
    bool is_sane(const size_t& width, const size_t & height, const std::string & cells) const
@@ -233,15 +231,20 @@ struct board
       return width * height == cells.size();
    }
 
-   index_t to_index(const coord & coord) const
+   size_t to_index(const coord & coord) const
 
    {
       if (!is_sane(coord))
       {
-         return index_t();
+         throw std::invalid_argument("wrong coordinates");
       }
 
-      return width_ * coord.y + coord.x;
+      return width_ * coord.y_ + coord.x_;
+   }
+
+   board::cell & get_cell(const coord & coord)
+   {
+      return cells_.at(to_index(coord));
    }
 
 //   last_direction get_last_direction() const
