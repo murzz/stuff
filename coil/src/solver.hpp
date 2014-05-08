@@ -26,6 +26,8 @@ void move(boost::asio::io_service & io_service, coil::board board,
    }
 
    // can't move, abandon board
+   //std::cout << "nowhere to move" << std::endl;
+   //std::cout << board << std::endl;
 
    //std::cout << "failed to solve" << std::endl;
 //   std::cout << board << std::endl;
@@ -62,6 +64,8 @@ void set_start_coord(coil::board & board)
 
    // set current coord so board::move would use it
    board.current_coord_ = *board.starting_coord_;
+   // mark start point as stomped (not empty)
+   board.get_cell(board.current_coord_) = coil::board::cell::step;
 }
 
 void solve(boost::asio::io_service & io_service, coil::board board)

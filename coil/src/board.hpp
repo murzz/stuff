@@ -19,6 +19,7 @@ enum class direction
 
 coil::direction & operator++(coil::direction & direction)
 {
+   //std::cout<<(char)direction << " -> ";
    switch (direction)
    {
       case coil::direction::up:
@@ -39,6 +40,7 @@ coil::direction & operator++(coil::direction & direction)
          throw std::invalid_argument("Invalid direction");
       }
    }
+   //std::cout<<(char)direction << std::endl;
    return direction;
 }
 
@@ -152,7 +154,8 @@ struct board
          return false;
       }
 
-      if (coil::board::cell::empty != get_cell(new_coords))
+      board::cell & cell = get_cell(new_coords);
+      if (board::cell::empty != cell)
       {
          // not an empty cell
          return false;
@@ -160,6 +163,7 @@ struct board
 
       // move one step
       current_coord_ = new_coords;
+      cell = board::cell::step;
 
       // try to move further the same direction
       for (; move(direction);)
@@ -282,13 +286,27 @@ std::ostream & operator<<(std::ostream & os, const board::path & path)
 
 std::ostream & operator<<(std::ostream & os, const board & rhs)
 {
+   for (size_t idx = 0; idx < rhs.cells_.size(); ++idx)
+   {
+      os << static_cast<std::string::value_type>(rhs.cells_.at(idx));
+      if ((idx+1) % rhs.width_ == 0)
+      {
+         os << std::endl;
+      }
+   }
+   os << std::endl;
+
    // should be in a format that could be parsed by config file parser
    os << "width = " << rhs.width_ << std::endl;
    os << "height = " << rhs.height_ << std::endl;
    os << "cells = " << rhs.cells_ << std::endl;
+   os << "start point = " << rhs.starting_coord_->x_ << ", " << rhs.starting_coord_->y_
+      << std::endl;
+   os << "current point = " << rhs.current_coord_.x_ << ", " << rhs.current_coord_.y_
+      << std::endl;
    os << "path = " << rhs.path_ << std::endl;
    //os << std::boolalpha << ", is solved? " << rhs.is_solved();
-   os << "is solved = " << (rhs.is_solved() ? "yes!" : "no :(") << std::endl;
+   os << "is solved = " << (rhs.is_solved() ? "yes" : "no") << std::endl;
 
    return os;
 }
