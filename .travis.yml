@@ -1,0 +1,18 @@
+language: cpp
+
+compiler:
+  - gcc
+  - clang
+
+before_install:
+ - sudo apt-get update
+
+install:
+ - sudo apt-get install cmake
+ - sudo apt-get install make
+ - sudo apt-get install boost-all-dev
+ - sudo apt-get install libhtmlcxx-dev
+ - sudo apt-get install libcurl4-*-dev
+
+script:
+ - make
