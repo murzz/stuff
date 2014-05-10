@@ -1,33 +1,38 @@
-all: build/cmake_bootstrap_success
-	@cd build && make --no-print-directory $@
+build_dir=/tmp
+
+# make file dir
+src_dir=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
+
+all: $(build_dir)/cmake_bootstrap_success
+	@cd $(build_dir) && make --no-print-directory $@
 
 clean:
-	@rm -rf build/
+	@rm -rf $(build_dir)/
 
-config: build/CMakeCache.txt
-	@ccmake build/
+config: $(build_dir)/CMakeCache.txt
+	@ccmake $(build_dir)/
 
-test: build/cmake_bootstrap_success all
-	@cd build && make --no-print-directory $@
+#test: $(build_dir)/cmake_bootstrap_success all
+#	@cd $(build_dir) && make --no-print-directory $@
 
 htmlcxx:
-	@mkdir -p build && cd build && ../scripts/htmlcxx.sh htmlcxx
+	@mkdir -p $(build_dir) && cd $(build_dir) && ../scripts/htmlcxx.sh htmlcxx
 
 # CMake setup
-build/CMakeCache.txt:
-	@mkdir -p build
-	-@cd build && cmake ..
+$(build_dir)/CMakeCache.txt:
+	@mkdir -p $(build_dir)
+	-@cd $(build_dir) && cmake $(src_dir)
 
 # CMake successful setup
-build/cmake_bootstrap_success:
-	@mkdir -p build
-	@cd build && cmake ..
-	@touch build/cmake_bootstrap_success
+$(build_dir)/cmake_bootstrap_success:
+	@mkdir -p $(build_dir)
+	@cd $(build_dir) && cmake $(src_dir)
+	@touch $(build_dir)/cmake_bootstrap_success
 
 # Forward targets to cmake generated makefile
-%: build/cmake_bootstrap_success
-	@cd build && make --no-print-directory $@
+%: $(build_dir)/cmake_bootstrap_success
+	@cd $(build_dir) && make --no-print-directory $@
 
 #.PHONY: all clean config test
 .PHONY: all clean config
-.SECONDARY: build/cmake_bootstrap_success
+.SECONDARY: $(build_dir)/cmake_bootstrap_success
