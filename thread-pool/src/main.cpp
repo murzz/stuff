@@ -3,12 +3,15 @@
 //#include <set>
 //#include <vector>
 #include <deque>
+#include <map>
+#include <algorithm>
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include <boost/random.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/program_options.hpp>
+#include <boost/timer/timer.hpp>
 
 #include <glog/logging.h>
 
@@ -281,6 +284,90 @@ struct env
    }
 };
 
+// f(n)=f(n-1)+f(n-2)
+struct fibo
+{
+   std::size_t idx_;
+   std::size_t& value_;
+
+   fibo(const std::size_t& idx, std::size_t& value) :
+      idx_(idx), value_(value)
+   {
+
+   }
+   void operator()()
+   {
+      switch (idx_)
+      {
+         case 0:
+            case 1:
+            value_ = 0;
+            break;
+         case 2:
+            value_ = 1;
+            break;
+         default:
+            std::size_t tmp_value1 = 0, tmp_value2 = 0;
+            fibo f1(idx_ - 1, tmp_value1);
+            f1();
+
+            fibo f2(idx_ - 2, tmp_value2);
+            f2();
+
+            value_ = tmp_value1 + tmp_value2;
+            break;
+      }
+   }
+};
+
+//typedef std::map<std::size_t, std::size_t> fibos_t;
+
+//void fibo_single_thread(const fibos_t::value_type& pair)
+template<typename container>
+void fibo_single_thread(const typename container::value_type& pair)
+{
+   boost::timer::auto_cpu_timer t;
+
+   std::size_t idx = pair.first;
+   std::size_t value = 0;
+   fibo fibo(idx, value);
+   fibo();
+
+   std::cout << "fibo(" << idx << ") = " << value << std::endl;
+   if (pair.second != value)
+   {
+      std::cout << "!!!!!!!!!!!!!!11 fibo is wrong" << std::endl;
+   }
+}
+
+template<typename container>
+struct fibo_multi_thread
+{
+   const std::size_t& thread_count_;
+   fibo_multi_thread(const std::size_t& thread_count) :
+      thread_count_(thread_count)
+   {
+   }
+
+   void operator()(const typename container::value_type& pair)
+   {
+      boost::timer::auto_cpu_timer t;
+
+      std::size_t idx = pair.first;
+      std::size_t value = 0;
+      fibo fibo(idx, value);
+      thread_pool pool(thread_count_);
+      //pool.post();
+      pool.run();
+
+      std::cout << "fibo(" << idx << ") = " << value << std::endl;
+      if (pair.second != value)
+      {
+         std::cout << "!!!!!!!!!!!!!!11 fibo is wrong" << std::endl;
+      }
+   }
+};
+
 int main(int argc, char* argv[])
 {
    // glog
@@ -294,11 +381,32 @@ int main(int argc, char* argv[])
       return result;
    }
 
+   // calculate fibonacci numbers using thread pool
+   typedef std::map<std::size_t, std::size_t> fibos_t;
+   fibos_t fibos =
+      {
+         { 1, 0 },
+         { 2, 1 },
+         { 26, 75025 },
+         { 31, 832040 },
+         { 40, 63245986 },
+         { 42, 165580141 },
+      //{ 45, 701408733 },
+      //{50, 7778742049},
+      };
+
+   std::cout << "-----------------------> single thread fibo <-----------------------" << std::endl;
+   std::for_each(fibos.begin(), fibos.end(), fibo_single_thread<fibos_t>);
+
+   std::cout << "-----------------------> multi thread fibo <-----------------------" << std::endl;
+   std::for_each(fibos.begin(), fibos.end(), fibo_multi_thread<fibos_t>(env.pool_size_));
+
+#if 0
    typedef queue<std::deque<worker> > queue_t;
    typedef async_wrapper<producer<queue_t> > async_producer_t;
    typedef async_wrapper<consumer<queue_t> > async_consumer_t;
 
-   // pool needs to be destroyed before queue, otherwise some tasks could still use queue when it is already dead
+// pool needs to be destroyed before queue, otherwise some tasks could still use queue when it is already dead
    queue_t queue;
    {
       thread_pool pool(env.pool_size_);
@@ -316,6 +424,6 @@ int main(int argc, char* argv[])
       // add current thread to pool. will block.
       pool.run();
    }
-
+#endif
    return EXIT_SUCCESS;
 }
