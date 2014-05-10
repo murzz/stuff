@@ -9,7 +9,7 @@ config: build/CMakeCache.txt
 
 test: build/cmake_bootstrap_success all
 	@cd build && make --no-print-directory $@
-	
+
 htmlcxx:
 	@mkdir -p build && cd build && ../scripts/htmlcxx.sh htmlcxx
 
