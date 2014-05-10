@@ -1,7 +1,7 @@
 #include <cstdlib>
 
 #include <boost/asio.hpp>
-#include <boost/asio/signal_set.hpp>
+//#include <boost/asio/signal_set.hpp>
 #include <boost/thread.hpp>
 
 #include "cmdline-parser.hpp"
