@@ -20,5 +20,5 @@ before_script:
  - cd coil
  
 script:
- - make --jobs
+ - make
  

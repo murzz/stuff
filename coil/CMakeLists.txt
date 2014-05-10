@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 project(coil)
 
-add_definitions(-std=gnu++0x)
+#add_definitions(-std=gnu++0x)
 add_definitions(-std=c++0x)
 add_definitions(-std=c++11)
 add_definitions(-DDISABLE_LONG_TESTS)
