@@ -81,7 +81,8 @@ struct board
    }
 
    board(const size_t& width, const size_t & height, const std::string & cells) :
-      board()
+     // board()
+   width_(0), height_(0) // for non cxx11
    {
       if (!is_sane(width, height, cells))
       {
