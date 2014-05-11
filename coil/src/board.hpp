@@ -58,7 +58,7 @@ struct coord
    }
 };
 
-typedef boost::optional<coord> starting_coord;
+typedef boost::optional<coord> optional_coord;
 
 struct board
 {
@@ -82,7 +82,7 @@ struct board
    }
 
    board(const size_t& width, const size_t & height, const std::string & cells) :
-       board()
+      board()
    {
       if (!is_sane(width, height, cells))
       {
@@ -120,6 +120,7 @@ struct board
    size_t height_;
    cells cells_;
    path path_; ///< moves
+   path short_path_; ///< moves
 
    void convert(cells & t, const std::string & string)
    {
@@ -144,39 +145,89 @@ struct board
       }
    }
 
-   ///@ param direction direction to move
-   ///@ return @true if was moved, @false otherwise
-   bool move(const coil::direction & direction)
+   bool step(const coil::direction & direction)
    {
-      coord new_coords = get_new_coords(direction);
-      if (!is_sane(new_coords))
+      // can step
+      coord new_coord = get_new_coords(direction);
+      if (!is_sane(new_coord))
       {
          // out of board
          return false;
       }
 
-      board::cell & cell = get_cell(new_coords);
+      board::cell & cell = get_cell(new_coord);
       if (board::cell::empty != cell)
       {
          // not an empty cell
          return false;
       }
 
-      // move one step
-      current_coord_ = new_coords;
+      // do step
+      current_coord_ = new_coord;
       cell = board::cell::step;
 
-      // try to move further the same direction
-      for (; move(direction);)
+      return true;
+   }
+
+   bool try_step(const coil::direction & direction)
+   {
+      coord new_coord = get_new_coords(direction);
+      if (!is_sane(new_coord))
       {
-         // move until bumped into something
+         // out of board
+         return false;
       }
 
-      // add direction to path
-      ///@TODO check if it was the only possible direction, if yes then do not add it.
-      path_.push_back(direction);
+      board::cell & cell = get_cell(new_coord);
+      if (board::cell::empty != cell)
+      {
+         // not an empty cell
+         return false;
+      }
 
       return true;
+   }
+
+   bool if_other_directions_available(const coil::direction & direction)
+   {
+      coil::direction d = direction;
+      ++d;
+      const bool step1 = try_step(d);
+
+      ++d;
+      const bool step2 = try_step(d);
+
+      ++d;
+      const bool step3 = try_step(d);
+
+      return step1 || step2 || step3;
+   }
+
+   ///@ param direction direction to move
+   ///@ return @true if was moved, @false otherwise
+   bool move(const coil::direction & direction)
+   {
+      const bool other_directions_available = if_other_directions_available(direction);
+      const bool has_first_step = step(direction);
+
+      if (has_first_step)
+      {
+         // try to step further the same direction
+         for (; step(direction);)
+         {
+            // step until bumped into something
+         }
+
+         // add direction to path
+         path_.push_back(direction);
+
+         if (other_directions_available)
+         {
+            short_path_.push_back(direction);
+         }
+      }
+
+      return has_first_step;
    }
 
    coord get_new_coords(const coil::direction & direction)
@@ -222,7 +273,7 @@ struct board
 
    coord current_coord_;
 
-   starting_coord starting_coord_;
+   optional_coord starting_coord_;
 
    bool is_sane(const coord & coord) const
 
@@ -308,6 +359,7 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "current point = " << rhs.current_coord_.x_ << ", " << rhs.current_coord_.y_
       << std::endl;
    os << "path = " << rhs.path_ << std::endl;
+   os << "short path = " << rhs.short_path_ << std::endl;
    //os << std::boolalpha << ", is solved? " << rhs.is_solved();
    os << "is solved = " << (rhs.is_solved() ? "yes" : "no") << std::endl;
 
