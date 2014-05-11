@@ -57,6 +57,7 @@ struct coord
 
    }
 };
+
 typedef boost::optional<coord> starting_coord;
 
 struct board
@@ -81,8 +82,7 @@ struct board
    }
 
    board(const size_t& width, const size_t & height, const std::string & cells) :
-     // board()
-   width_(0), height_(0) // for non cxx11
+       board()
    {
       if (!is_sane(width, height, cells))
       {
@@ -287,10 +287,11 @@ std::ostream & operator<<(std::ostream & os, const board::path & path)
 
 std::ostream & operator<<(std::ostream & os, const board & rhs)
 {
+   // print board
    for (size_t idx = 0; idx < rhs.cells_.size(); ++idx)
    {
       os << static_cast<std::string::value_type>(rhs.cells_.at(idx));
-      if ((idx+1) % rhs.width_ == 0)
+      if ((idx + 1) % rhs.width_ == 0)
       {
          os << std::endl;
       }
@@ -301,7 +302,8 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "width = " << rhs.width_ << std::endl;
    os << "height = " << rhs.height_ << std::endl;
    os << "cells = " << rhs.cells_ << std::endl;
-   os << "start point = " << rhs.starting_coord_->x_ << ", " << rhs.starting_coord_->y_
+   os << "start point = " << (rhs.starting_coord_ ? rhs.starting_coord_->x_ : 0)
+      << ", " << (rhs.starting_coord_ ? rhs.starting_coord_->y_ : 0)
       << std::endl;
    os << "current point = " << rhs.current_coord_.x_ << ", " << rhs.current_coord_.y_
       << std::endl;
