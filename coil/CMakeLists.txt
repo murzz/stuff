@@ -11,7 +11,7 @@ add_definitions(-Wall)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/mk/cmake-modules")
 
-find_package(Boost COMPONENTS system program_options unit_test_framework thread REQUIRED)
+find_package(Boost COMPONENTS system program_options unit_test_framework thread date_time REQUIRED)
 find_package(CURL REQUIRED)
 find_package(HtmlCxx REQUIRED)
 

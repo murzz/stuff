@@ -120,7 +120,7 @@ struct board
    size_t height_;
    cells cells_;
    path path_; ///< moves
-   path short_path_; ///< moves
+   path qpath_; ///< moves
 
    void convert(cells & t, const std::string & string)
    {
@@ -191,14 +191,10 @@ struct board
    bool if_other_directions_available(const coil::direction & direction)
    {
       coil::direction d = direction;
-      ++d;
-      const bool step1 = try_step(d);
 
-      ++d;
-      const bool step2 = try_step(d);
-
-      ++d;
-      const bool step3 = try_step(d);
+      const bool step1 = try_step(++d);
+      const bool step2 = try_step(++d);
+      const bool step3 = try_step(++d);
 
       return step1 || step2 || step3;
    }
@@ -223,7 +219,7 @@ struct board
 
          if (other_directions_available)
          {
-            short_path_.push_back(direction);
+            qpath_.push_back(direction);
          }
       }
 
@@ -359,7 +355,7 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "current point = " << rhs.current_coord_.x_ << ", " << rhs.current_coord_.y_
       << std::endl;
    os << "path = " << rhs.path_ << std::endl;
-   os << "short path = " << rhs.short_path_ << std::endl;
+   os << "short path = " << rhs.qpath_ << std::endl;
    //os << std::boolalpha << ", is solved? " << rhs.is_solved();
    os << "is solved = " << (rhs.is_solved() ? "yes" : "no") << std::endl;
 

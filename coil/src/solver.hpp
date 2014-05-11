@@ -1,10 +1,33 @@
 #pragma once
 
 #include <iostream>
+#include <fstream>
+
 #include <boost/asio.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+
 #include "board.hpp"
 
 void solve(boost::asio::io_service & io_service, coil::board board);
+
+void save(const coil::board & board)
+{
+   const std::string file_name = boost::posix_time::to_simple_string(
+      boost::posix_time::second_clock::local_time());
+
+   std::ofstream f(file_name.c_str());
+
+   f << board << std::endl;
+}
+
+void upload(boost::asio::io_service & io_service, const coil::board & board)
+{
+   ///@TODO upload board, you will get new board as a reply (if solution is ok)
+   ///@TODO start with next board by starting executable again, thus no need to pass cmd line arguments
+
+   ///@TODO make url
+   io_service.post(boost::bind(curl::download()));
+}
 
 void move(boost::asio::io_service & io_service, coil::board board,
    const coil::direction & direction)
@@ -13,14 +36,14 @@ void move(boost::asio::io_service & io_service, coil::board board,
 
    if (board.is_solved())
    {
-      ///@TODO upload board, save it for reference, download next board
-      std::cout << board << std::endl;
+      io_service.post(boost::bind(save, board));
+      io_service.post(boost::bind(upload, boost::ref(io_service), board));
       return;
    }
 
    if (is_moved)
    {
-      // schedule next move
+      // schedule next iteration
       io_service.post(boost::bind(solve, boost::ref(io_service), board));
       return;
    }

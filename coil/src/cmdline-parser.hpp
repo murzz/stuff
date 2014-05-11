@@ -52,6 +52,7 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
 {
    // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
    std::string html_board;
+   std::string html_board2;
 
    htmlcxx::HTML::ParserDom parser;
    tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
@@ -67,14 +68,29 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
             html_board = it->attribute("value").second;
          }
       }
+
+      if (it->tagName() == "embed")
+      {
+         it->parseAttributes();
+         html_board2 = it->attribute("FlashVars").second;
+      }
    }
+
+//   if (html_board != html_board2)
+//   {
+//      std::string err = "Boards not equal";
+////#ifndef NDEBUG
+//      err += ": '" + html_board + "' != '" + html_board2 + "'";
+////#endif
+//      throw std::invalid_argument(err.c_str());
+//   }
 
    if (html_board.empty())
    {
       std::string err = "Required attributes not found in html";
-#ifdef DEBUG
+//#ifndef NDEBUG
       err += ": " + html;
-#endif
+//#endif
       throw std::invalid_argument(err.c_str());
    }
 

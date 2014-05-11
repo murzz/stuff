@@ -43,9 +43,10 @@ int main(int argc, char** argv)
          threads.create_thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
       }
 
-      std::size_t handlers_count = io_service.run();
+      //std::size_t handlers_count = io_service.run();
+      io_service.run();
       threads.join_all();
-      std::cout << handlers_count << " handler(s) were executed" << std::endl;
+      //std::cout << handlers_count << " handler(s) were executed" << std::endl;
    }
    catch (const std::exception & e)
    {
