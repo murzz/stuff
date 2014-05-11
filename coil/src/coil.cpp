@@ -7,6 +7,7 @@
 #include "cmdline-parser.hpp"
 #include "board.hpp"
 #include "solver.hpp"
+#include "env.hpp"
 
 void board_handler(boost::asio::io_service & io_service, const coil::board & board)
 {
@@ -17,6 +18,9 @@ int main(int argc, char** argv)
 {
    try
    {
+      env::get().argc_ = argc;
+      env::get().argv_ = argv;
+
       boost::asio::io_service io_service;
 
       //TODO: run() will wait forever because of this work, need to find a way to cancel it on graceful exit (all handlers completed)

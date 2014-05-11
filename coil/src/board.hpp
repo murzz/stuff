@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include <boost/optional.hpp>
+#include <boost/date_time.hpp>
 
 namespace coil
 {
@@ -76,12 +77,13 @@ struct board
    typedef std::vector<direction> path;
 
    board() :
-      width_(0), height_(0)
+      level_(0), width_(0), height_(0)
    {
 
    }
 
-   board(const size_t& width, const size_t & height, const std::string & cells) :
+   board(const size_t & width, const size_t & height, const std::string & cells,
+      const size_t & level = 0) :
       board()
    {
       if (!is_sane(width, height, cells))
@@ -89,6 +91,7 @@ struct board
          throw std::invalid_argument("board size mismatch");
       }
 
+      level_ = level;
       width_ = width;
       height_ = height;
       //cells_ = cells;
@@ -116,11 +119,15 @@ struct board
    }
 
 //private:
+   size_t level_;
    size_t width_;
    size_t height_;
    cells cells_;
    path path_; ///< moves
    path qpath_; ///< moves
+
+   boost::posix_time::ptime started_solving_;
+   boost::posix_time::ptime finished_solving_;
 
    void convert(cells & t, const std::string & string)
    {
@@ -332,6 +339,16 @@ std::ostream & operator<<(std::ostream & os, const board::path & path)
    return os;
 }
 
+//std::string & operator std::string(std::string & os, const board::path & path)
+//   {
+////   for (const auto & step : path)
+////   {
+////      os += static_cast<std::string::value_type>(step);
+////   }
+////
+////   return os;
+//}
+
 std::ostream & operator<<(std::ostream & os, const board & rhs)
 {
    // print board
@@ -346,6 +363,7 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << std::endl;
 
    // should be in a format that could be parsed by config file parser
+   os << "level = " << rhs.level_ << std::endl;
    os << "width = " << rhs.width_ << std::endl;
    os << "height = " << rhs.height_ << std::endl;
    os << "cells = " << rhs.cells_ << std::endl;
@@ -358,6 +376,7 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "short path = " << rhs.qpath_ << std::endl;
    //os << std::boolalpha << ", is solved? " << rhs.is_solved();
    os << "is solved = " << (rhs.is_solved() ? "yes" : "no") << std::endl;
+   os << "is solved in " << (rhs.finished_solving_ - rhs.started_solving_) << std::endl;
 
    return os;
 }

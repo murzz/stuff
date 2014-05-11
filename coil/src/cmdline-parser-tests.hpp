@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-
+#include <fstream>
 //#define BOOST_TEST_MODULE parser tests
 #include <boost/test/unit_test.hpp>
 
@@ -23,6 +23,39 @@
 //};
 //
 //}
+
+BOOST_AUTO_TEST_CASE( get_board_string_from_html_test )
+{
+   std::ifstream file("./coil/res/level2.html");
+   std::stringstream stream;
+   stream << file.rdbuf();
+
+   std::string board;
+   cmdline::internal::get_board_string(board, stream.str());
+
+   const std::string expected = "x=5&y=3&board=......X......X.&level=2";
+
+   BOOST_REQUIRE_EQUAL(expected, board);
+}
+
+BOOST_AUTO_TEST_CASE( get_no_board_string_from_html_test )
+{
+   std::string board;
+   const std::string html = "<html>not a mortal coil html page</html>";
+
+   BOOST_REQUIRE_THROW(cmdline::internal::get_board_string(board, html), std::invalid_argument);
+}
+
+BOOST_AUTO_TEST_CASE( get_wrong_board_string_from_html_test )
+{
+   std::ifstream file("./coil/res/level2-wrong-board.html");
+   std::stringstream stream;
+   stream << file.rdbuf();
+
+   std::string board;
+
+   BOOST_REQUIRE_THROW(cmdline::internal::get_board_string(board, stream.str()), std::invalid_argument);
+}
 
 //BOOST_AUTO_TEST_CASE( version_option_test )
 //{

@@ -5,19 +5,26 @@
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/lexical_cast.hpp>
 
 #include "board.hpp"
+#include "cmdline-parser.hpp"
 
 void solve(boost::asio::io_service & io_service, coil::board board);
 
 void save(const coil::board & board)
 {
-   const std::string file_name = boost::posix_time::to_simple_string(
-      boost::posix_time::second_clock::local_time());
+   const std::string file_name = "solution_" + boost::lexical_cast<std::string>(board.level_) + "_"
+      + boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
 
    std::ofstream f(file_name.c_str());
 
    f << board << std::endl;
+}
+
+void new_board_handler(boost::asio::io_service & io_service, const coil::board & board)
+{
+   io_service.post(boost::bind(solve, boost::ref(io_service), board));
 }
 
 void upload(boost::asio::io_service & io_service, const coil::board & board)
@@ -25,8 +32,32 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
    ///@TODO upload board, you will get new board as a reply (if solution is ok)
    ///@TODO start with next board by starting executable again, thus no need to pass cmd line arguments
 
-   ///@TODO make url
-   io_service.post(boost::bind(curl::download()));
+   std::stringstream qpath;
+   qpath << board.qpath_;
+
+   const std::string url = env::get().url_
+      + "?name=" + env::get().name_
+      + "&password=" + env::get().pass_
+      + "&qpath=" + qpath.str()
+      + "&x=" + boost::lexical_cast<std::string>(board.starting_coord_->x_)
+      + "&y=" + boost::lexical_cast<std::string>(board.starting_coord_->y_)
+         ;
+
+   typedef boost::function<void(boost::asio::io_service & io_service, const coil::board & board)> board_handler_type;
+   board_handler_type board_handler_functor = boost::bind(new_board_handler, boost::ref(io_service),
+      _2);
+
+//   typedef typename cmdline::internal::templated_functor<board_handler_type>::html_handler_type html_handler_type;
+//   html_handler_type html_handler_functor = boost::bind(
+//      cmdline::internal::html_handler<boost::tuple<board_handler_type>>,
+//      boost::ref(io_service),
+//      boost::make_tuple(board_handler_functor), _3);
+
+//   io_service.post(
+//      boost::bind(curl::download<boost::tuple<html_handler_type, board_handler_type> >,
+//         boost::ref(io_service),
+//         boost::make_tuple(html_handler_functor, board_handler_functor), url));
+
 }
 
 void move(boost::asio::io_service & io_service, coil::board board,
@@ -36,6 +67,7 @@ void move(boost::asio::io_service & io_service, coil::board board,
 
    if (board.is_solved())
    {
+      board.finished_solving_ = boost::posix_time::second_clock::local_time();
       io_service.post(boost::bind(save, board));
       io_service.post(boost::bind(upload, boost::ref(io_service), board));
       return;

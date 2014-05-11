@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cctype>
 #include <iostream>
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
@@ -8,6 +9,7 @@
 #include <htmlcxx/html/ParserDom.h>
 #include "board.hpp"
 #include "curl.hpp"
+#include "env.hpp"
 
 namespace cmdline
 {
@@ -33,26 +35,25 @@ struct templated_functor
 
 struct options
 {
+   std::size_t level_;
    std::size_t x_;
    std::size_t y_;
    std::string board_;
 
-   std::string url_;
-   std::string name_;
-   std::string pass_;
+//   std::string url_;
+//   std::string name_;
+//   std::string pass_;
    options() :
-      x_(0), y_(0)
+      level_(0), x_(0), y_(0)
    {
    }
 };
 
-/// handler is called whenever there is a need to transform board in html form to config form
-template<typename Handler>
-void html_handler(boost::asio::io_service & io_service, Handler handler, const std::string & html)
+void get_board_string(std::string& html_board, const std::string & html)
 {
-   // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
-   std::string html_board;
    std::string html_board2;
+
+   // we have 2 places with FlashVars defined, parse it both and compare
 
    htmlcxx::HTML::ParserDom parser;
    tree<htmlcxx::HTML::Node> dom = parser.parseTree(html);
@@ -72,9 +73,62 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
       if (it->tagName() == "embed")
       {
          it->parseAttributes();
-         html_board2 = it->attribute("FlashVars").second;
+         html_board2 = it->attribute("flashvars").second;
+//         auto m = it->attributes();
+//         for (const auto & p : m)
+//         {
+//            std::cout << p.first << " " << p.second << std::endl;
+//         }
+      }
+
+      if (!html_board.empty() && !html_board2.empty())
+      {
+         break; // early
       }
    }
+
+   if (html_board != html_board2)
+   {
+      std::string err = "Error parsing html_board";
+      err += "'" + html_board + "' != '" + html_board2 + "'";
+      throw std::invalid_argument(err.c_str());
+   }
+
+   // find level
+   const std::string level_prefix = "Level: ";
+   const std::string::size_type start_idx = html.find(level_prefix);
+   if (std::string::npos == start_idx)
+   {
+      throw std::invalid_argument("Failed to find level");
+   }
+
+   //
+   std::string level_string;
+   // loop until non numeric char found
+   for (size_t idx = start_idx + level_prefix.size(); idx < html.size(); ++idx)
+   {
+      std::string::value_type c = html.at(idx);
+      if (std::isdigit(c))
+      {
+         level_string += c;
+      }
+      else
+      {
+         break;
+      }
+   }
+
+   html_board += "&level=" + level_string;
+}
+
+/// handler is called whenever there is a need to transform board in html form to config form
+template<typename Handler>
+void html_handler(boost::asio::io_service & io_service, Handler handler, const std::string & html)
+{
+   // parse out board from html: <param name="FlashVars" value="x=5&y=3&board=......X......X." />
+   std::string html_board;
+
+   get_board_string(html_board, html);
 
 //   if (html_board != html_board2)
 //   {
@@ -87,7 +141,7 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
 
    if (html_board.empty())
    {
-      std::string err = "Required attributes not found in html";
+      std::string err = "Board not found in html";
 //#ifndef NDEBUG
       err += ": " + html;
 //#endif
@@ -117,15 +171,16 @@ void perform(boost::asio::io_service & io_service, Handler handler, options opti
    if (options.x_ && options.y_ && !options.board_.empty())
    {
       // board available
-      coil::board board(options.x_, options.y_, options.board_);
+      coil::board board(options.x_, options.y_, options.board_, options.level_);
+      board.started_solving_ = boost::posix_time::second_clock::local_time();
       io_service.post(boost::bind(handler.template get<0>(), board));
    }
-   else if (!options.url_.empty() && !options.name_.empty() && !options.pass_.empty())
+   else if (!env::get().url_.empty() && !env::get().name_.empty() && !env::get().pass_.empty())
    {
       // download board, then it will be parsed during general flow
 
-      const std::string url = options.url_ + "?name=" + options.name_ + "&password="
-         + options.pass_;
+      const std::string url = env::get().url_ + "?name=" + env::get().name_ + "&password="
+         + env::get().pass_;
 
 //      typedef typename helper<Handler>::parse_type parse_type;
 //      parse_type parse_functor = boost::bind(::cmdline::parse<Handler>, boost::ref(io_service),
@@ -173,6 +228,7 @@ void parse(boost::asio::io_service & io_service, Handler handler, int argc, char
 
    po::options_description board_options("Board options");
    board_options.add_options()
+   ("level,l", po::value<std::size_t>(&options.level_), "set board level")
    ("x", po::value<std::size_t>(&options.x_), "set board width") // name forced to be able to read from file
    ("y", po::value<std::size_t>(&options.y_), "set board height")
    ("board,b", po::value<std::string>(&options.board_),
@@ -181,11 +237,11 @@ void parse(boost::asio::io_service & io_service, Handler handler, int argc, char
    po::options_description account_options("Account options");
    account_options.add_options()
    ("url,u",
-      po::value<std::string>(&options.url_)->default_value(url_template),
+      po::value<std::string>(&env::get().url_)->default_value(url_template),
       "URL template to be used for GET request")
-   ("name,n", po::value<std::string>(&options.name_),
+   ("name,n", po::value<std::string>(&env::get().name_),
       ("registered user name at hacker.org (could be env var prefixed with '" + prefix + "')").c_str())
-   ("password,p", po::value<std::string>(&options.pass_),
+   ("password,p", po::value<std::string>(&env::get().pass_),
       ("password (could be env var prefixed with '" + prefix + "')").c_str());
 
    // put options together
