@@ -17,7 +17,7 @@ find_package(HtmlCxx REQUIRED)
 
 set( COIL_INCLUDE_DIRS
     ${CURL_INCLUDE_DIRS}
-    ${Boost_INCLUDES}
+    ${Boost_INCLUDE_DIRS}
     ${HTMLCXX_INCLUDE_DIRS}
 )
 
