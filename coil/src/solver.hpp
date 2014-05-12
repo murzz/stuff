@@ -9,8 +9,33 @@
 
 #include "board.hpp"
 #include "cmdline-parser.hpp"
+#include "env.hpp"
 
 void solve(boost::asio::io_service & io_service, coil::board board);
+
+void save(std::ostream & os, const coil::board & board)
+{
+   // print board for debug purposes
+   const std::string line_start = "#";
+   os << line_start;
+
+   for (size_t idx = 0; idx < board.cells_.size(); ++idx)
+   {
+      os << static_cast<std::string::value_type>(board.cells_.at(idx));
+      if ((idx + 1) % board.width_ == 0)
+      {
+         os << std::endl;
+         if (idx + 1 != board.cells_.size())
+         {
+            os << line_start;
+         }
+      }
+   }
+   os << std::endl;
+
+   os << board;
+   os << "pool size = " << env::get().pool_size_ << std::endl;
+}
 
 void save(const coil::board & board)
 {
@@ -18,8 +43,7 @@ void save(const coil::board & board)
       + boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
 
    std::ofstream f(file_name.c_str());
-
-   f << board << std::endl;
+   save(f, board);
 }
 
 void new_board_handler(boost::asio::io_service & io_service, const coil::board & board)
@@ -119,7 +143,7 @@ void set_start_coord(coil::board & board)
 
    // set current coord so board::move would use it
    board.current_coord_ = *board.starting_coord_;
-   // mark start point as stomped (not empty)
+   // mark start point as stumped (not empty)
    board.get_cell(board.current_coord_) = coil::board::cell::step;
 }
 
@@ -131,13 +155,7 @@ void solve(boost::asio::io_service & io_service, coil::board board)
    coil::direction direction = coil::direction::up;
 
    io_service.post(boost::bind(move, boost::ref(io_service), board, direction));
-
-   ++direction;
-   io_service.post(boost::bind(move, boost::ref(io_service), board, direction));
-
-   ++direction;
-   io_service.post(boost::bind(move, boost::ref(io_service), board, direction));
-
-   ++direction;
-   io_service.post(boost::bind(move, boost::ref(io_service), board, direction));
+   io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));
+   io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));
+   io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));
 }

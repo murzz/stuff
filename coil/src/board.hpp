@@ -154,7 +154,7 @@ struct board
 
    bool step(const coil::direction & direction)
    {
-      // can step
+      // try step
       coord new_coord = get_new_coords(direction);
       if (!is_sane(new_coord))
       {
@@ -351,17 +351,6 @@ std::ostream & operator<<(std::ostream & os, const board::path & path)
 
 std::ostream & operator<<(std::ostream & os, const board & rhs)
 {
-   // print board
-   for (size_t idx = 0; idx < rhs.cells_.size(); ++idx)
-   {
-      os << static_cast<std::string::value_type>(rhs.cells_.at(idx));
-      if ((idx + 1) % rhs.width_ == 0)
-      {
-         os << std::endl;
-      }
-   }
-   os << std::endl;
-
    // should be in a format that could be parsed by config file parser
    os << "level = " << rhs.level_ << std::endl;
    os << "width = " << rhs.width_ << std::endl;
@@ -376,7 +365,7 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "short path = " << rhs.qpath_ << std::endl;
    //os << std::boolalpha << ", is solved? " << rhs.is_solved();
    os << "is solved = " << (rhs.is_solved() ? "yes" : "no") << std::endl;
-   os << "is solved in " << (rhs.finished_solving_ - rhs.started_solving_) << std::endl;
+   os << "solved in " << (rhs.finished_solving_ - rhs.started_solving_) << std::endl;
 
    return os;
 }

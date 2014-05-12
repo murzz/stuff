@@ -37,11 +37,11 @@ int main(int argc, char** argv)
             boost::make_tuple(handler), argc, argv, nullptr));
 
       // create thread pool and do the job
-      unsigned pool_size =
+      env::get().pool_size_ =
          boost::thread::hardware_concurrency() ? boost::thread::hardware_concurrency() : 1;
 
       boost::thread_group threads;
-      for (std::size_t idx = 0; idx < pool_size - 1; ++idx)
+      for (std::size_t idx = 0; idx < env::get().pool_size_ - 1; ++idx)
       {
          ///@TODO to get number of handlers for each thread need to bind wrapper
          threads.create_thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));

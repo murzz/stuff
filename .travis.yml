@@ -5,9 +5,9 @@ compiler:
   - clang
 
 before_install:
- - lsb_release -a 
+ - lsb_release --all
  - sudo apt-get update
-# - sudo apt-get upgrade 
+ - sudo apt-get upgrade
 
 install:
  - sudo apt-get install build-essential
@@ -21,7 +21,7 @@ before_script:
  - mkdir --parents build/coil
  - mkdir --parents build/triangle
  - mkdir --parents build/thread-pool
- 
+
 script:
  - cd build/coil && cmake ../../coil && make
  - cd ../../build/triangle && cmake ../../triangle && make

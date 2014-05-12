@@ -9,6 +9,8 @@ struct env
    std::string name_;
    std::string pass_;
 
+   unsigned pool_size_;
+
    static env & get()
    {
       static env impl;
