@@ -18,9 +18,9 @@ install:
  - sudo apt-get install libcurl4-*-dev
 
 before_script:
- - mkdir build/coil
- - mkdir build/triangle
- - mkdir build/thread-pool
+ - mkdir --parents build/coil
+ - mkdir --parents build/triangle
+ - mkdir --parents build/thread-pool
  
 script:
  - cd build/coil && cmake ../../coil && make
