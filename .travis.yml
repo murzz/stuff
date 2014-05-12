@@ -24,5 +24,5 @@ before_script:
  
 script:
  - cd build/coil && cmake ../../coil && make
- - cd build/triangle && cmake ../../triangle && make
- - cd build/thread-pool && cmake ../../thread-pool && make
+ - cd ../../build/triangle && cmake ../../triangle && make
+ - cd ../../build/thread-pool && cmake ../../thread-pool && make
