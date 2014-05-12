@@ -7,7 +7,7 @@ compiler:
 before_install:
  - lsb_release -a 
  - sudo apt-get update
- - sudo apt-get upgrade 
+# - sudo apt-get upgrade 
 
 install:
  - sudo apt-get install build-essential
@@ -17,10 +17,12 @@ install:
  - sudo apt-get install libhtmlcxx-dev
  - sudo apt-get install libcurl4-*-dev
 
-#before_script:
-# - cd coil
+before_script:
+ - mkdir build/coil
+ - mkdir build/triangle
+ - mkdir build/thread-pool
  
 script:
- - cd coil && cmake && make
- - cd triangle && cmake && make
- - cd thread-pool && cmake && make
+ - cd build/coil && cmake ../../coil && make
+ - cd build/triangle && cmake ../../triangle && make
+ - cd build/thread-pool && cmake ../../thread-pool && make
