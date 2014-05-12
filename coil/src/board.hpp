@@ -282,7 +282,7 @@ struct board
 
    coord current_coord_;
 
-   optional_coord starting_coord_;
+   optional_coord start_coord_;
 
    bool is_sane(const coord & coord) const
 
@@ -310,6 +310,11 @@ struct board
    board::cell & get_cell(const coord & coord)
    {
       return cells_.at(to_index(coord));
+   }
+
+   board::cell & get_cell(const coil::coord::value_type & x, const coil::coord::value_type & y)
+   {
+      return get_cell(coord(x, y));
    }
 
 //   last_direction get_last_direction() const
@@ -362,8 +367,8 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "width = " << rhs.width_ << std::endl;
    os << "height = " << rhs.height_ << std::endl;
    os << "cells = " << rhs.cells_ << std::endl;
-   os << "start point = " << (rhs.starting_coord_ ? rhs.starting_coord_->x_ : 0)
-      << ", " << (rhs.starting_coord_ ? rhs.starting_coord_->y_ : 0)
+   os << "start point = " << (rhs.start_coord_ ? rhs.start_coord_->x_ : 0)
+      << ", " << (rhs.start_coord_ ? rhs.start_coord_->y_ : 0)
       << std::endl;
    os << "current point = " << rhs.current_coord_.x_ << ", " << rhs.current_coord_.y_
       << std::endl;

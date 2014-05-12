@@ -158,6 +158,22 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
       boost::bind(parse<Handler>, boost::ref(io_service), handler, 0, nullptr, config_data));
 }
 
+void save(const internal::options & options)
+{
+   std::stringstream name;
+   name << "level_" << options.level_;
+//      << "_" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
+
+   std::stringstream content;
+   content << "level = " << options.level_ << std::endl;
+   content << "x = " << options.x_ << std::endl;
+   content << "y = " << options.y_ << std::endl;
+   content << "board = " << options.board_ << std::endl;
+
+   std::ofstream file(name.str().c_str());
+   file << content.rdbuf();
+}
+
 /// perform actions defined by command line
 template<typename Handler>
 void perform(boost::asio::io_service & io_service, Handler handler, options options)
@@ -165,8 +181,15 @@ void perform(boost::asio::io_service & io_service, Handler handler, options opti
    if (options.x_ && options.y_ && !options.board_.empty())
    {
       // board available
+
+      // save level
+      io_service.post(boost::bind(save, options));
+
+      // create board
       coil::board board(options.x_, options.y_, options.board_, options.level_);
       board.started_solving_ = boost::posix_time::second_clock::local_time();
+
+      // solve it
       io_service.post(boost::bind(handler.template get<0>(), board));
    }
    else if (!env::get().url_.empty() && !env::get().name_.empty() && !env::get().pass_.empty())

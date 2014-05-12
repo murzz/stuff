@@ -63,8 +63,8 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
       + "?name=" + env::get().name_
       + "&password=" + env::get().pass_
       + "&qpath=" + qpath.str()
-      + "&x=" + boost::lexical_cast<std::string>(board.starting_coord_->x_)
-      + "&y=" + boost::lexical_cast<std::string>(board.starting_coord_->y_)
+      + "&x=" + boost::lexical_cast<std::string>(board.start_coord_->x_)
+      + "&y=" + boost::lexical_cast<std::string>(board.start_coord_->y_)
          ;
 
    typedef boost::function<void(const coil::board & board)> board_handler_type;
@@ -113,37 +113,39 @@ void move(boost::asio::io_service & io_service, coil::board board,
 
 void set_start_coord(coil::board & board)
 {
-   if (board.starting_coord_)
+   if (board.start_coord_)
    {
       // already set
       return;
    }
 
-   // init starting coords, could be random
-   board.starting_coord_ = coil::coord(0, 0);
+   // come up with start coordinates, could be random
+   board.start_coord_ = coil::coord(0, 0);
+   coil::coord::value_type & x = board.start_coord_->x_;
+   coil::coord::value_type & y = board.start_coord_->y_;
 
    // find sane point closest to starting coord
    // this algo is looking by incrementing indexes
    // so starting point should not be too close to the edge of the board, or it would fail
-   for (coil::coord::value_type x = board.starting_coord_->x_; x < board.width_; ++x)
+   for (; x < board.width_; ++x)
    {
-      board.starting_coord_->x_ = x;
-      for (coil::coord::value_type y = board.starting_coord_->y_; y < board.height_; ++y)
+      for (; y < board.height_; ++y)
       {
-         board.starting_coord_->y_ = y;
-         if (coil::board::cell::empty == board.get_cell(*board.starting_coord_))
+         if (coil::board::cell::empty == board.get_cell(x, y))
          {
-            break;
+            goto start_coord_ready;
          }
       }
    }
 
-   // set current coord so board::move would use it
-   board.current_coord_ = *board.starting_coord_;
+   start_coord_ready:
+
+   // set current coord so board would use it
+   board.current_coord_ = *board.start_coord_;
    // mark start point as stumped (not empty)
    board.get_cell(board.current_coord_) = coil::board::cell::step;
 
-   BOOST_LOG_TRIVIAL(info) << "Starting coords: " << board.current_coord_;
+   BOOST_LOG_TRIVIAL(info)<< "Starting coords: " << board.current_coord_;
 }
 
 void solve(boost::asio::io_service & io_service, coil::board board)
