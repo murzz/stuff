@@ -8,10 +8,11 @@ add_definitions(-std=c++11)
 
 add_definitions(-DDISABLE_LONG_TESTS)
 add_definitions(-Wall)
+add_definitions(-DBOOST_ALL_DYN_LINK)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/mk/cmake-modules")
 
-find_package(Boost COMPONENTS system program_options unit_test_framework thread date_time REQUIRED)
+find_package(Boost COMPONENTS system program_options unit_test_framework thread date_time log REQUIRED)
 find_package(CURL REQUIRED)
 find_package(HtmlCxx REQUIRED)
 

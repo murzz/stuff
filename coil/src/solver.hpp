@@ -6,6 +6,7 @@
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "board.hpp"
 #include "cmdline-parser.hpp"
@@ -106,13 +107,8 @@ void move(boost::asio::io_service & io_service, coil::board board,
       return;
    }
 
-   // can't move, abandon board
-   //std::cout << "nowhere to move" << std::endl;
-   //std::cout << board << std::endl;
-
-   //std::cout << "failed to solve" << std::endl;
-//   std::cout << board << std::endl;
-//   io_service.post(boost::bind(&boost::asio::io_service::stop, &io_service));
+   // can't move and unsolved
+   //save(std::cout, board);
 }
 
 void set_start_coord(coil::board & board)
@@ -146,6 +142,8 @@ void set_start_coord(coil::board & board)
    board.current_coord_ = *board.starting_coord_;
    // mark start point as stumped (not empty)
    board.get_cell(board.current_coord_) = coil::board::cell::step;
+
+   BOOST_LOG_TRIVIAL(info) << "Starting coords: " << board.current_coord_;
 }
 
 void solve(boost::asio::io_service & io_service, coil::board board)

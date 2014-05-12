@@ -59,6 +59,12 @@ struct coord
    }
 };
 
+std::ostream & operator<<(std::ostream & os, const coil::coord & rhs)
+{
+   os << "x = " << rhs.x_ << ", y = " << rhs.y_;
+   return os;
+}
+
 typedef boost::optional<coord> optional_coord;
 
 struct board
@@ -365,7 +371,11 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "short path = " << rhs.qpath_ << std::endl;
    //os << std::boolalpha << ", is solved? " << rhs.is_solved();
    os << "is solved = " << (rhs.is_solved() ? "yes" : "no") << std::endl;
-   os << "solved in " << (rhs.finished_solving_ - rhs.started_solving_) << std::endl;
+
+   if (rhs.is_solved())
+   {
+      os << "solved in " << (rhs.finished_solving_ - rhs.started_solving_) << std::endl;
+   }
 
    return os;
 }

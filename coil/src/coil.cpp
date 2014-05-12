@@ -3,6 +3,7 @@
 #include <boost/asio.hpp>
 //#include <boost/asio/signal_set.hpp>
 #include <boost/thread.hpp>
+#include <boost/log/trivial.hpp>
 
 #include "cmdline-parser.hpp"
 #include "board.hpp"
@@ -18,6 +19,8 @@ int main(int argc, char** argv)
 {
    try
    {
+      BOOST_LOG_TRIVIAL(trace) << "Started";
+
       env::get().argc_ = argc;
       env::get().argv_ = argv;
 
@@ -37,8 +40,8 @@ int main(int argc, char** argv)
             boost::make_tuple(handler), argc, argv, nullptr));
 
       // create thread pool and do the job
-      env::get().pool_size_ =
-         boost::thread::hardware_concurrency() ? boost::thread::hardware_concurrency() : 1;
+      env::get().pool_size_ = 1;
+         //boost::thread::hardware_concurrency() ? boost::thread::hardware_concurrency() : 1;
 
       boost::thread_group threads;
       for (std::size_t idx = 0; idx < env::get().pool_size_ - 1; ++idx)
@@ -47,10 +50,11 @@ int main(int argc, char** argv)
          threads.create_thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
       }
 
-      std::size_t handlers_count = io_service.run();
-      //io_service.run();
+      //std::size_t handlers_count = io_service.run();
+      io_service.run();
       threads.join_all();
-      std::cout << handlers_count << " handler(s) were executed" << std::endl;
+      //std::cout << handlers_count << " handler(s) were executed" << std::endl;
+      BOOST_LOG_TRIVIAL(trace) << "Finished";
    }
    catch (const std::exception & e)
    {
