@@ -62,5 +62,10 @@ int main(int argc, char** argv)
       std::cerr << ec.message() << std::endl;
       return EXIT_FAILURE;
    }
+   catch (...)
+   {
+      std::cerr << "Unknown exception" << std::endl;
+      return EXIT_FAILURE;
+   }
    return EXIT_SUCCESS;
 }
