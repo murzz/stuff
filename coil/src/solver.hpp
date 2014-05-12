@@ -121,8 +121,7 @@ void set_start_coord(coil::board & board)
       return;
    }
 
-   // init starting coords
-   // define starting coords, could be random
+   // init starting coords, could be random
    board.starting_coord_ = coil::coord(0, 0);
 
    // find sane point closest to starting coord
@@ -151,7 +150,7 @@ void solve(boost::asio::io_service & io_service, coil::board board)
 {
    set_start_coord(board);
 
-   // move to all 4 directions
+   // move to all 4 directions at once
    coil::direction direction = coil::direction::up;
 
    io_service.post(boost::bind(move, boost::ref(io_service), board, direction));

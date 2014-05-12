@@ -89,8 +89,9 @@ void get_board_string(std::string& html_board, const std::string & html)
 
    if (html_board != html_board2)
    {
-      std::string err = "Error parsing html_board";
+      std::string err = "Error parsing html_board: ";
       err += "'" + html_board + "' != '" + html_board2 + "'";
+      err += ", html = '" + html + "'";
       throw std::invalid_argument(err.c_str());
    }
 
@@ -99,7 +100,9 @@ void get_board_string(std::string& html_board, const std::string & html)
    const std::string::size_type start_idx = html.find(level_prefix);
    if (std::string::npos == start_idx)
    {
-      throw std::invalid_argument("Failed to find level");
+      std::string err = "Failed to find level";
+      err += ", html = '" + html + "'";
+      throw std::invalid_argument(err.c_str());
    }
 
    //
@@ -129,15 +132,6 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
    std::string html_board;
 
    get_board_string(html_board, html);
-
-//   if (html_board != html_board2)
-//   {
-//      std::string err = "Boards not equal";
-////#ifndef NDEBUG
-//      err += ": '" + html_board + "' != '" + html_board2 + "'";
-////#endif
-//      throw std::invalid_argument(err.c_str());
-//   }
 
    if (html_board.empty())
    {
