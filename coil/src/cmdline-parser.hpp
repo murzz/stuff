@@ -2,10 +2,13 @@
 
 #include <cctype>
 #include <iostream>
+
 #include <boost/asio.hpp>
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/log/trivial.hpp>
+
 #include <htmlcxx/html/ParserDom.h>
 #include "board.hpp"
 #include "curl.hpp"
@@ -160,6 +163,8 @@ void html_handler(boost::asio::io_service & io_service, Handler handler, const s
 
 void save(const internal::options & options)
 {
+   BOOST_LOG_TRIVIAL(info) << "Saving level #" << options.level_;
+
    std::stringstream name;
    name << "level_" << options.level_;
 //      << "_" << boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
@@ -195,6 +200,7 @@ void perform(boost::asio::io_service & io_service, Handler handler, options opti
    else if (!env::get().url_.empty() && !env::get().name_.empty() && !env::get().pass_.empty())
    {
       // download board, then it will be parsed during general flow
+      BOOST_LOG_TRIVIAL(info) << "Downloading level";
 
       const std::string url = env::get().url_ + "?name=" + env::get().name_ + "&password="
          + env::get().pass_;

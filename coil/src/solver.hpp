@@ -40,8 +40,10 @@ void save(std::ostream & os, const coil::board & board)
 
 void save(const coil::board & board)
 {
+   BOOST_LOG_TRIVIAL(info)<< "Saving solution for level #" << board.level_;
+
    const std::string file_name = "solution_" + boost::lexical_cast<std::string>(board.level_) + "_"
-      + boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
+   + boost::posix_time::to_iso_string(boost::posix_time::second_clock::local_time());
 
    std::ofstream f(file_name.c_str());
    save(f, board);
@@ -56,24 +58,26 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
 {
    // upload board, you will get new board as a reply (if solution is ok)
 
+   BOOST_LOG_TRIVIAL(info)<< "Uploading solution for level #" << board.level_;
+
    std::stringstream qpath;
    qpath << board.qpath_;
 
    const std::string url = env::get().url_
-      + "?name=" + env::get().name_
-      + "&password=" + env::get().pass_
-      + "&qpath=" + qpath.str()
-      + "&x=" + boost::lexical_cast<std::string>(board.start_coord_->x_)
-      + "&y=" + boost::lexical_cast<std::string>(board.start_coord_->y_)
-         ;
+   + "?name=" + env::get().name_
+   + "&password=" + env::get().pass_
+   + "&qpath=" + qpath.str()
+   + "&x=" + boost::lexical_cast<std::string>(board.start_coord_->x_)
+   + "&y=" + boost::lexical_cast<std::string>(board.start_coord_->y_)
+   ;
 
    typedef boost::function<void(const coil::board & board)> board_handler_type;
    board_handler_type board_handler_functor = boost::bind(new_board_handler, boost::ref(io_service),
       _1);
 
    typedef boost::function<
-      void(boost::asio::io_service & io_service, board_handler_type board_handler,
-         const std::string & html)> html_handler_type;
+   void(boost::asio::io_service & io_service, board_handler_type board_handler,
+      const std::string & html)> html_handler_type;
 
    html_handler_type html_handler_functor = boost::bind(
       cmdline::internal::html_handler<boost::tuple<board_handler_type>>,
@@ -90,6 +94,8 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
 void move(boost::asio::io_service & io_service, coil::board board,
    const coil::direction & direction)
 {
+   BOOST_LOG_TRIVIAL(trace)<< "Moving " << direction;
+
    const bool is_moved = board.move(direction);
 
    if (board.is_solved())
@@ -152,9 +158,9 @@ void solve(boost::asio::io_service & io_service, coil::board board)
 {
    set_start_coord(board);
 
-   // move to all 4 directions at once
    coil::direction direction = coil::direction::up;
 
+   // move to all 4 directions at once
    io_service.post(boost::bind(move, boost::ref(io_service), board, direction));
    io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));
    io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));

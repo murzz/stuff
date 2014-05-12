@@ -45,6 +45,13 @@ coil::direction & operator++(coil::direction & direction)
    return direction;
 }
 
+std::ostream & operator<<(std::ostream & os, const coil::direction & rhs)
+{
+   ///@TODO use underlying_type of enum
+   os << static_cast<std::string::value_type>(rhs);
+   return os;
+}
+
 //typedef boost::optional<direction> last_direction;
 
 struct coord
