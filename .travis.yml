@@ -17,8 +17,10 @@ install:
  - sudo apt-get install libhtmlcxx-dev
  - sudo apt-get install libcurl4-*-dev
 
-before_script:
- - cd coil
+#before_script:
+# - cd coil
  
 script:
- - make
+ - cd coil && cmake && make
+ - cd triangle && cmake && make
+ - cd thread-pool && cmake && make
