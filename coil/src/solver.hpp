@@ -53,8 +53,7 @@ void new_board_handler(boost::asio::io_service & io_service, const coil::board &
 
 void upload(boost::asio::io_service & io_service, const coil::board & board)
 {
-   ///@TODO upload board, you will get new board as a reply (if solution is ok)
-   ///@TODO start with next board by starting executable again, thus no need to pass cmd line arguments
+   // upload board, you will get new board as a reply (if solution is ok)
 
    std::stringstream qpath;
    qpath << board.qpath_;
@@ -67,20 +66,23 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
       + "&y=" + boost::lexical_cast<std::string>(board.starting_coord_->y_)
          ;
 
-   typedef boost::function<void(boost::asio::io_service & io_service, const coil::board & board)> board_handler_type;
+   typedef boost::function<void(const coil::board & board)> board_handler_type;
    board_handler_type board_handler_functor = boost::bind(new_board_handler, boost::ref(io_service),
-      _2);
+      _1);
 
-//   typedef typename cmdline::internal::templated_functor<board_handler_type>::html_handler_type html_handler_type;
-//   html_handler_type html_handler_functor = boost::bind(
-//      cmdline::internal::html_handler<boost::tuple<board_handler_type>>,
-//      boost::ref(io_service),
-//      boost::make_tuple(board_handler_functor), _3);
+   typedef boost::function<
+      void(boost::asio::io_service & io_service, board_handler_type board_handler,
+         const std::string & html)> html_handler_type;
 
-//   io_service.post(
-//      boost::bind(curl::download<boost::tuple<html_handler_type, board_handler_type> >,
-//         boost::ref(io_service),
-//         boost::make_tuple(html_handler_functor, board_handler_functor), url));
+   html_handler_type html_handler_functor = boost::bind(
+      cmdline::internal::html_handler<boost::tuple<board_handler_type>>,
+      boost::ref(io_service),
+      boost::make_tuple(board_handler_functor), _3);
+
+   io_service.post(
+      boost::bind(curl::download<boost::tuple<html_handler_type, board_handler_type> >,
+         boost::ref(io_service),
+         boost::make_tuple(html_handler_functor, board_handler_functor), url));
 
 }
 

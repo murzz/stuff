@@ -29,11 +29,11 @@ int main(int argc, char** argv)
 //      signals.async_wait(boost::bind(&boost::asio::io_service::stop, &io_service));
 
       // parse command line
-      typedef boost::function<void(coil::board board)> handler_type;
-      handler_type handler = boost::bind(board_handler, boost::ref(io_service), _1);
+      typedef boost::function<void(coil::board board)> board_handler_type;
+      board_handler_type handler = boost::bind(board_handler, boost::ref(io_service), _1);
 
       io_service.post(
-         boost::bind(cmdline::parse<boost::tuple<handler_type> >, boost::ref(io_service),
+         boost::bind(cmdline::parse<boost::tuple<board_handler_type> >, boost::ref(io_service),
             boost::make_tuple(handler), argc, argv, nullptr));
 
       // create thread pool and do the job
