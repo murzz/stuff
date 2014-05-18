@@ -102,8 +102,11 @@ void move(boost::asio::io_service & io_service, coil::board board,
    {
       BOOST_LOG_TRIVIAL(info)<< "Solved";
       board.finished_solving_ = boost::posix_time::second_clock::local_time();
+
       io_service.post(boost::bind(save, board));
+#ifndef UNIT_TEST_BUILD
       io_service.post(boost::bind(upload, boost::ref(io_service), board));
+#endif
       return;
    }
 
@@ -151,7 +154,7 @@ void solve(boost::asio::io_service & io_service, coil::board board)
 
          // make first move
          io_service.post(boost::bind(next_move, boost::ref(io_service), board, direction));
-         break;
+         //break;
       }
    }
 
