@@ -7,7 +7,7 @@
 
 #include "cmdline-parser.hpp"
 #include "board.hpp"
-#include "solver.hpp"
+#include "solve.hpp"
 #include "env.hpp"
 
 void board_handler(boost::asio::io_service & io_service, coil::board & board)
@@ -19,7 +19,7 @@ int main(int argc, char** argv)
 {
    try
    {
-      BOOST_LOG_TRIVIAL(trace)<< "Started";
+      BOOST_LOG_TRIVIAL(info)<< "Started";
 
       env::get().argc_ = argc;
       env::get().argv_ = argv;
@@ -39,23 +39,9 @@ int main(int argc, char** argv)
          boost::bind(cmdline::parse<boost::tuple<board_handler_type> >, boost::ref(io_service),
             boost::make_tuple(handler), argc, argv, nullptr));
 
-      // create thread pool and do the job
-      env::get().pool_size_ = 1;//boost::thread::hardware_concurrency() ? boost::thread::hardware_concurrency() : 1;
-
-      BOOST_LOG_TRIVIAL(info) << "Pool size = " << env::get().pool_size_;
-
-      boost::thread_group threads;
-      for (std::size_t idx = 0; idx < env::get().pool_size_ - 1; ++idx)
-      {
-         ///@TODO to get number of handlers for each thread need to bind wrapper
-         threads.create_thread(boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
-      }
-
-      //std::size_t handlers_count = io_service.run();
       io_service.run();
-      threads.join_all();
-      //std::cout << handlers_count << " handler(s) were executed" << std::endl;
-      BOOST_LOG_TRIVIAL(trace) << "Finished";
+      env::get().threads_.join_all();
+      BOOST_LOG_TRIVIAL(info) << "Finished";
    }
    catch (const std::exception & e)
    {

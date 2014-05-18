@@ -4,4 +4,5 @@
 #include "cmdline-parser-tests.hpp"
 #include "board-tests.hpp"
 #include "curl-tests.hpp"
+#include "solve-tests.hpp"
 

@@ -89,7 +89,6 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
       boost::bind(curl::download<boost::tuple<html_handler_type, board_handler_type> >,
          boost::ref(io_service),
          boost::make_tuple(html_handler_functor, board_handler_functor), url));
-
 }
 
 void move(boost::asio::io_service & io_service, coil::board board,
@@ -101,6 +100,7 @@ void move(boost::asio::io_service & io_service, coil::board board,
 
    if (board.is_solved())
    {
+      BOOST_LOG_TRIVIAL(info)<< "Solved";
       board.finished_solving_ = boost::posix_time::second_clock::local_time();
       io_service.post(boost::bind(save, board));
       io_service.post(boost::bind(upload, boost::ref(io_service), board));
@@ -117,42 +117,7 @@ void move(boost::asio::io_service & io_service, coil::board board,
    // can't move and unsolved
    //std::cout << "can't move " << direction << std::endl;
    //save(std::cout, board);
-   io_service.post(boost::bind(solve, boost::ref(io_service), board));
-}
-
-void set_start_coord(coil::board & board)
-{
-//   if (board.start_coord_)
-//   {
-//      // already set
-//      return;
-//   }
-
-   // come up with start coordinates, could be random
-//   board.start_coord_ = coil::coord(0, 0);
-//   coil::coord::value_type & x = board.start_coord_->x_;
-//   coil::coord::value_type & y = board.start_coord_->y_;
-//
-//   // find sane point closest to starting coord
-//   // this algo is looking by incrementing indexes
-//   // so starting point should not be too close to the edge of the board, or it would fail
-//   for (; x < board.width_; ++x)
-//   {
-//      for (; y < board.height_; ++y)
-//      {
-//         if (coil::board::cell::empty == board.get_cell(x, y))
-//         {
-//            goto start_coord_ready;
-//         }
-//      }
-//   }
-//
-//   start_coord_ready:
-//
-//   // set current coord so board would use it
-//   board.current_coord_ = *board.start_coord_;
-//   // mark start point as stumped (not empty)
-//   board.get_cell(board.current_coord_) = coil::board::cell::step;
+   //io_service.post(boost::bind(solve, boost::ref(io_service), board));
 }
 
 void next_move(boost::asio::io_service & io_service, coil::board & board,
@@ -167,8 +132,6 @@ void next_move(boost::asio::io_service & io_service, coil::board & board,
 
 void solve(boost::asio::io_service & io_service, coil::board board)
 {
-   //set_start_coord(board);
-
    // set starting coord
    bool was_set = false;
    for (coil::board::cells::size_type idx = 0; idx < board.starting_cells_.size(); ++idx)
@@ -182,6 +145,12 @@ void solve(boost::asio::io_service & io_service, coil::board board)
          board.solving_cells_.at(idx) = coil::board::cell::step; // mark as occupied on solving board
          was_set = true;
          BOOST_LOG_TRIVIAL(info)<< "Starting coords: " << board.start_coord_;
+
+         ///@TODO could be random
+         coil::direction direction = coil::direction::up;
+
+         // make first move
+         io_service.post(boost::bind(next_move, boost::ref(io_service), board, direction));
          break;
       }
    }
@@ -192,9 +161,9 @@ void solve(boost::asio::io_service & io_service, coil::board board)
       return;
    }
 
-   ///@TODO could be random
-   coil::direction direction = coil::direction::up;
-
-   // make first move
-   io_service.post(boost::bind(next_move, boost::ref(io_service), board, direction));
+//   ///@TODO could be random
+//   coil::direction direction = coil::direction::up;
+//
+//   // make first move
+//   io_service.post(boost::bind(next_move, boost::ref(io_service), board, direction));
 }

@@ -227,6 +227,35 @@ void perform(boost::asio::io_service & io_service, Handler handler, options opti
          "Either Board options or Account options should be defined. Try --help option.");
    }
 }
+
+void update_thread_pool(boost::asio::io_service & io_service, const int & new_pool_size)
+{
+   if (-1 == new_pool_size)
+   {
+      // if pool size yet not been set
+      if (!env::get().pool_size_)
+      {
+         // set it
+         env::get().pool_size_ =
+            boost::thread::hardware_concurrency() ? boost::thread::hardware_concurrency() : 1;
+         BOOST_LOG_TRIVIAL(info)<<"Pool size = " << env::get().pool_size_;
+      }
+   }
+   else
+   {
+     BOOST_LOG_TRIVIAL(trace)<<"Pool size changed to " << new_pool_size;
+      env::get().pool_size_ = new_pool_size;
+   }
+
+   // main thread is also working for io_service, so count it in
+   for (; env::get().pool_size_ > env::get().threads_.size() + 1;)
+   {
+      BOOST_LOG_TRIVIAL(trace)<< "Adding thread";
+      env::get().threads_.create_thread(
+         boost::bind(&boost::asio::io_service::run, boost::ref(io_service)));
+   }
+}
+
 } //namespace internal
 
 /// parse options from command line, config file, env vars
@@ -234,8 +263,11 @@ template<typename Handler>
 void parse(boost::asio::io_service & io_service, Handler handler, int argc, char ** argv,
    boost::shared_ptr<std::stringstream> config_data)
 {
+   BOOST_LOG_TRIVIAL(trace) << "Parsing...";
+
    namespace po = boost::program_options;
    internal::options options;
+   int new_pool_size = -1;
 
    // prefix for env vars
    const std::string prefix = "hacker_org_";
@@ -247,8 +279,9 @@ void parse(boost::asio::io_service & io_service, Handler handler, int argc, char
    general_options.add_options()
    ("help,h", "produce help message")
    ("version,v", "print program version")
-   ("file,f", po::value<std::string>(&config_file_name),
-      "read board configuration from file");
+   ("file,f", po::value<std::string>(&config_file_name),"read board configuration from file")
+   ("pool-size,p", po::value<int>(&new_pool_size)->default_value(-1), "number of threads to create")
+      ;
 
    po::options_description board_options("Board options");
    board_options.add_options()
@@ -315,6 +348,9 @@ void parse(boost::asio::io_service & io_service, Handler handler, int argc, char
 
    // final notify
    po::notify(vm);
+
+   // update thread pool
+   io_service.post(boost::bind(internal::update_thread_pool, boost::ref(io_service), new_pool_size));
 
    // next action
    io_service.post(
