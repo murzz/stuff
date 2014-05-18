@@ -13,6 +13,8 @@
 #include "env.hpp"
 
 void solve(boost::asio::io_service & io_service, coil::board board);
+void next_move(boost::asio::io_service & io_service, coil::board & board,
+   coil::direction direction);
 
 void save(std::ostream & os, const coil::board & board)
 {
@@ -20,13 +22,13 @@ void save(std::ostream & os, const coil::board & board)
    const std::string line_start = "#";
    os << line_start;
 
-   for (size_t idx = 0; idx < board.cells_.size(); ++idx)
+   for (size_t idx = 0; idx < board.solving_cells_.size(); ++idx)
    {
-      os << static_cast<std::string::value_type>(board.cells_.at(idx));
+      os << static_cast<std::string::value_type>(board.solving_cells_.at(idx));
       if ((idx + 1) % board.width_ == 0)
       {
          os << std::endl;
-         if (idx + 1 != board.cells_.size())
+         if (idx + 1 != board.solving_cells_.size())
          {
             os << line_start;
          }
@@ -67,9 +69,8 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
    + "?name=" + env::get().name_
    + "&password=" + env::get().pass_
    + "&qpath=" + qpath.str()
-   + "&x=" + boost::lexical_cast<std::string>(board.start_coord_->x_)
-   + "&y=" + boost::lexical_cast<std::string>(board.start_coord_->y_)
-   ;
+   + "&x=" + boost::lexical_cast<std::string>(board.start_coord_.x_)
+   + "&y=" + boost::lexical_cast<std::string>(board.start_coord_.y_);
 
    typedef boost::function<void(const coil::board & board)> board_handler_type;
    board_handler_type board_handler_functor = boost::bind(new_board_handler, boost::ref(io_service),
@@ -94,7 +95,7 @@ void upload(boost::asio::io_service & io_service, const coil::board & board)
 void move(boost::asio::io_service & io_service, coil::board board,
    const coil::direction & direction)
 {
-   BOOST_LOG_TRIVIAL(trace)<< "Moving " << direction;
+   //BOOST_LOG_TRIVIAL(trace)<< "Moving " << direction;
 
    const bool is_moved = board.move(direction);
 
@@ -109,60 +110,91 @@ void move(boost::asio::io_service & io_service, coil::board board,
    if (is_moved)
    {
       // schedule next iteration
-      io_service.post(boost::bind(solve, boost::ref(io_service), board));
+      io_service.post(boost::bind(next_move, boost::ref(io_service), board, direction));
       return;
    }
 
    // can't move and unsolved
+   //std::cout << "can't move " << direction << std::endl;
    //save(std::cout, board);
+   io_service.post(boost::bind(solve, boost::ref(io_service), board));
 }
 
 void set_start_coord(coil::board & board)
 {
-   if (board.start_coord_)
-   {
-      // already set
-      return;
-   }
+//   if (board.start_coord_)
+//   {
+//      // already set
+//      return;
+//   }
 
    // come up with start coordinates, could be random
-   board.start_coord_ = coil::coord(0, 0);
-   coil::coord::value_type & x = board.start_coord_->x_;
-   coil::coord::value_type & y = board.start_coord_->y_;
-
-   // find sane point closest to starting coord
-   // this algo is looking by incrementing indexes
-   // so starting point should not be too close to the edge of the board, or it would fail
-   for (; x < board.width_; ++x)
-   {
-      for (; y < board.height_; ++y)
-      {
-         if (coil::board::cell::empty == board.get_cell(x, y))
-         {
-            goto start_coord_ready;
-         }
-      }
-   }
-
-   start_coord_ready:
-
-   // set current coord so board would use it
-   board.current_coord_ = *board.start_coord_;
-   // mark start point as stumped (not empty)
-   board.get_cell(board.current_coord_) = coil::board::cell::step;
-
-   BOOST_LOG_TRIVIAL(info)<< "Starting coords: " << board.current_coord_;
+//   board.start_coord_ = coil::coord(0, 0);
+//   coil::coord::value_type & x = board.start_coord_->x_;
+//   coil::coord::value_type & y = board.start_coord_->y_;
+//
+//   // find sane point closest to starting coord
+//   // this algo is looking by incrementing indexes
+//   // so starting point should not be too close to the edge of the board, or it would fail
+//   for (; x < board.width_; ++x)
+//   {
+//      for (; y < board.height_; ++y)
+//      {
+//         if (coil::board::cell::empty == board.get_cell(x, y))
+//         {
+//            goto start_coord_ready;
+//         }
+//      }
+//   }
+//
+//   start_coord_ready:
+//
+//   // set current coord so board would use it
+//   board.current_coord_ = *board.start_coord_;
+//   // mark start point as stumped (not empty)
+//   board.get_cell(board.current_coord_) = coil::board::cell::step;
 }
 
-void solve(boost::asio::io_service & io_service, coil::board board)
+void next_move(boost::asio::io_service & io_service, coil::board & board,
+   coil::direction direction)
 {
-   set_start_coord(board);
-
-   coil::direction direction = coil::direction::up;
-
    // move to all 4 directions at once
    io_service.post(boost::bind(move, boost::ref(io_service), board, direction));
    io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));
    io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));
    io_service.post(boost::bind(move, boost::ref(io_service), board, ++direction));
+}
+
+void solve(boost::asio::io_service & io_service, coil::board board)
+{
+   //set_start_coord(board);
+
+   // set starting coord
+   bool was_set = false;
+   for (coil::board::cells::size_type idx = 0; idx < board.starting_cells_.size(); ++idx)
+   {
+      coil::board::cell & starting_cell = board.starting_cells_.at(idx);
+      if (coil::board::cell::empty == starting_cell)
+      {
+         board.start_coord_ = board.to_coord(idx);
+         board.current_coord_ = board.start_coord_;
+         starting_cell = coil::board::cell::step; // mark as occupied on starting board
+         board.solving_cells_.at(idx) = coil::board::cell::step; // mark as occupied on solving board
+         was_set = true;
+         BOOST_LOG_TRIVIAL(info)<< "Starting coords: " << board.start_coord_;
+         break;
+      }
+   }
+
+   if (!was_set)
+   {
+      BOOST_LOG_TRIVIAL(error)<< "No more starting coordinates available, unable to solve board";
+      return;
+   }
+
+   ///@TODO could be random
+   coil::direction direction = coil::direction::up;
+
+   // make first move
+   io_service.post(boost::bind(next_move, boost::ref(io_service), board, direction));
 }

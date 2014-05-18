@@ -64,6 +64,11 @@ struct coord
    {
 
    }
+
+   bool operator ==(const coord & rhs) const
+      {
+      return x_ == rhs.x_ && y_ == rhs.y_;
+   }
 };
 
 std::ostream & operator<<(std::ostream & os, const coil::coord & rhs)
@@ -72,7 +77,7 @@ std::ostream & operator<<(std::ostream & os, const coil::coord & rhs)
    return os;
 }
 
-typedef boost::optional<coord> optional_coord;
+//typedef boost::optional<coord> optional_coord;
 
 struct board
 {
@@ -108,13 +113,14 @@ struct board
       width_ = width;
       height_ = height;
       //cells_ = cells;
-      convert(cells_, cells);
+      convert(solving_cells_, cells);
+      starting_cells_ = solving_cells_;
    }
 
    bool operator==(const board & rhs) const
 
    {
-      return width_ == rhs.width_ && height_ == rhs.height_ && cells_ == rhs.cells_;
+      return width_ == rhs.width_ && height_ == rhs.height_ && solving_cells_ == rhs.solving_cells_;
    }
 
    bool operator!=(const board & rhs) const
@@ -128,16 +134,18 @@ struct board
    bool is_solved() const
    {
       // is solved if there is no empty cells
-      return cells_.end() == std::find(cells_.begin(), cells_.end(), cell::empty);
+      return solving_cells_.end()
+         == std::find(solving_cells_.begin(), solving_cells_.end(), cell::empty);
    }
 
 //private:
    size_t level_;
    size_t width_;
    size_t height_;
-   cells cells_;
-   path path_; ///< moves
-   path qpath_; ///< moves
+   cells solving_cells_;
+   cells starting_cells_;
+   path path_;
+   path qpath_;
 
    boost::posix_time::ptime started_solving_;
    boost::posix_time::ptime finished_solving_;
@@ -160,7 +168,12 @@ struct board
                t.push_back(cell);
                break;
             default:
-               throw std::invalid_argument("Wrong cell value");
+
+            {
+               std::stringstream err;
+               err << "Wrong cell value: " << value;
+               throw std::invalid_argument(err.str().c_str());
+            }
          }
       }
    }
@@ -288,8 +301,9 @@ struct board
    //typedef boost::optional<size_t> index_t;
 
    coord current_coord_;
+   coord start_coord_;
 
-   optional_coord start_coord_;
+   //optional_coord start_coord_;
 
    bool is_sane(const coord & coord) const
 
@@ -303,20 +317,50 @@ struct board
       return width * height == cells.size();
    }
 
-   size_t to_index(const coord & coord) const
+   bool is_sane(const cells::size_type & idx) const
+
+   {
+      return solving_cells_.size() > idx;
+   }
+
+   cells::size_type to_index(const coord & coord) const
 
    {
       if (!is_sane(coord))
       {
-         throw std::invalid_argument("wrong coordinates");
+         std::stringstream serr;
+         serr << "wrong coordinates: x = " << coord.x_
+            << ", y = " << coord.y_;
+         throw std::invalid_argument(serr.str().c_str());
       }
 
       return width_ * coord.y_ + coord.x_;
    }
 
+   coord to_coord(const cells::size_type & idx) const
+
+   {
+      if (!is_sane(idx))
+      {
+         std::stringstream serr;
+         serr << "wrong index: idx = " << idx;
+         throw std::invalid_argument(serr.str().c_str());
+      }
+
+      coord::value_type x = idx % width_;
+      coord::value_type y = idx / width_;
+
+      return coord(x, y);
+   }
+
    board::cell & get_cell(const coord & coord)
    {
-      return cells_.at(to_index(coord));
+      return solving_cells_.at(to_index(coord));
+   }
+
+   board::cell & get_cell(const cells::size_type & idx)
+   {
+      return solving_cells_.at(idx);
    }
 
    board::cell & get_cell(const coil::coord::value_type & x, const coil::coord::value_type & y)
@@ -373,10 +417,13 @@ std::ostream & operator<<(std::ostream & os, const board & rhs)
    os << "level = " << rhs.level_ << std::endl;
    os << "width = " << rhs.width_ << std::endl;
    os << "height = " << rhs.height_ << std::endl;
-   os << "cells = " << rhs.cells_ << std::endl;
-   os << "start point = " << (rhs.start_coord_ ? rhs.start_coord_->x_ : 0)
-      << ", " << (rhs.start_coord_ ? rhs.start_coord_->y_ : 0)
+   os << "cells = " << rhs.solving_cells_ << std::endl;
+//   os << "start point = " << (rhs.start_coord_ ? rhs.start_coord_->x_ : 0)
+//      << ", " << (rhs.start_coord_ ? rhs.start_coord_->y_ : 0)
+//      << std::endl;
+   os << "starting point = " << rhs.start_coord_.x_ << ", " << rhs.start_coord_.y_
       << std::endl;
+
    os << "current point = " << rhs.current_coord_.x_ << ", " << rhs.current_coord_.y_
       << std::endl;
    os << "path = " << rhs.path_ << std::endl;

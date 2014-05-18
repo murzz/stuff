@@ -10,9 +10,8 @@
 #include "solver.hpp"
 #include "env.hpp"
 
-void board_handler(boost::asio::io_service & io_service, const coil::board & board)
+void board_handler(boost::asio::io_service & io_service, coil::board & board)
 {
-   BOOST_LOG_TRIVIAL(info)<< "Start solving level";
    io_service.post(boost::bind(solve, boost::ref(io_service), board));
 }
 
@@ -41,7 +40,7 @@ int main(int argc, char** argv)
             boost::make_tuple(handler), argc, argv, nullptr));
 
       // create thread pool and do the job
-      env::get().pool_size_ = boost::thread::hardware_concurrency() ? boost::thread::hardware_concurrency() : 1;
+      env::get().pool_size_ = 1;//boost::thread::hardware_concurrency() ? boost::thread::hardware_concurrency() : 1;
 
       BOOST_LOG_TRIVIAL(info) << "Pool size = " << env::get().pool_size_;
 

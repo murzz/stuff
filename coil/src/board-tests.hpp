@@ -126,3 +126,38 @@ BOOST_AUTO_TEST_CASE( is_board_solved )
 
    BOOST_REQUIRE_EQUAL(b.is_solved(), false);
 }
+
+struct make_board
+{
+   coil::coord to_coord(const coil::coord::value_type & x, const coil::coord::value_type & y)
+   {
+      return coil::coord(x, y);
+   }
+
+   coil::coord to_coord(const coil::coord::value_type & idx)
+   {
+      const std::size_t width = 5, height = 3;
+      const std::string cells = "......X......X.";
+      const coil::board board(width, height, cells);
+
+      return board.to_coord(idx);
+   }
+};
+
+BOOST_FIXTURE_TEST_CASE( idx_to_coord , make_board)
+{
+   const coil::coord::value_type idx = 0, x = 0, y = 0;
+   BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+}
+
+BOOST_FIXTURE_TEST_CASE( idx_to_coord2 , make_board)
+{
+   const coil::coord::value_type idx = 1, x = 1, y = 0;
+   BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+}
+
+BOOST_FIXTURE_TEST_CASE( idx_to_coord3 , make_board)
+{
+   const coil::coord::value_type idx = 14, x = 4, y = 2;
+   BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+}

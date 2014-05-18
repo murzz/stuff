@@ -192,9 +192,10 @@ void perform(boost::asio::io_service & io_service, Handler handler, options opti
 
       // create board
       coil::board board(options.x_, options.y_, options.board_, options.level_);
-      board.started_solving_ = boost::posix_time::second_clock::local_time();
 
       // solve it
+      BOOST_LOG_TRIVIAL(info)<< "Start solving level";
+      board.started_solving_ = boost::posix_time::second_clock::local_time();
       io_service.post(boost::bind(handler.template get<0>(), board));
    }
    else if (!env::get().url_.empty() && !env::get().name_.empty() && !env::get().pass_.empty())
