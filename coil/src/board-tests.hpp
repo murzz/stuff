@@ -146,18 +146,29 @@ struct make_board
 
 BOOST_FIXTURE_TEST_CASE( idx_to_coord , make_board)
 {
-   const coil::coord::value_type idx = 0, x = 0, y = 0;
-   BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+   {
+      const coil::coord::value_type idx = 0, x = 0, y = 0;
+      BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+   }
+   {
+      const coil::coord::value_type idx = 1, x = 1, y = 0;
+      BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+   }
+   {
+      const coil::coord::value_type idx = 14, x = 4, y = 2;
+      BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+   }
+   {
+      const coil::coord::value_type idx = 4, x = 4, y = 0;
+      BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+   }
+   {
+      const coil::coord::value_type idx = 9, x = 4, y = 1;
+      BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+   }
+   {
+      const coil::coord::value_type idx = 10, x = 0, y = 2;
+      BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
+   }
 }
 
-BOOST_FIXTURE_TEST_CASE( idx_to_coord2 , make_board)
-{
-   const coil::coord::value_type idx = 1, x = 1, y = 0;
-   BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
-}
-
-BOOST_FIXTURE_TEST_CASE( idx_to_coord3 , make_board)
-{
-   const coil::coord::value_type idx = 14, x = 4, y = 2;
-   BOOST_REQUIRE_EQUAL(to_coord(x, y), to_coord(idx));
-}
