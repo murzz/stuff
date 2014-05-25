@@ -141,17 +141,22 @@ struct board
    size_t level_;
    size_t width_;
    size_t height_;
+
    cells solving_cells_;
    cells starting_cells_;
+
    path path_;
    path qpath_;
+
+   coord current_coord_;
+   coord start_coord_;
 
    boost::posix_time::ptime started_solving_;
    boost::posix_time::ptime finished_solving_;
 
-   cells & str_to_cells(cells & cells, const std::string & string)
+   cells & str_to_cells(cells & t, const std::string & string)
    {
-      cells.clear();
+      t.clear();
 
       for (const auto & value : string)
       {
@@ -164,7 +169,7 @@ struct board
 
             case board::cell::wall:
 
-               cells.push_back(cell);
+               t.push_back(cell);
                break;
             default:
 
@@ -175,9 +180,10 @@ struct board
             }
          }
       }
-      return cells;
+      return t;
    }
 
+   /// try step and do step
    bool step(const coil::direction & direction)
    {
       // try step
@@ -202,6 +208,7 @@ struct board
       return true;
    }
 
+   /// check if could step selected direction
    bool try_step(const coil::direction & direction)
    {
       coord new_coord = get_new_coords(direction);
@@ -221,6 +228,7 @@ struct board
       return true;
    }
 
+   /// Check if could step on directions other then provided one
    bool if_other_directions_available(const coil::direction & direction)
    {
       coil::direction d = direction;
@@ -232,6 +240,7 @@ struct board
       return step1 || step2 || step3;
    }
 
+   /// perform move (do steps until hit wall or border)
    ///@ param direction direction to move
    ///@ return @true if was moved, @false otherwise
    bool move(const coil::direction & direction)
@@ -252,6 +261,7 @@ struct board
 
          if (other_directions_available)
          {
+            // and to quick path
             qpath_.push_back(direction);
          }
       }
@@ -259,6 +269,7 @@ struct board
       return has_first_step;
    }
 
+   /// get coordinates of new step following direction
    coord get_new_coords(const coil::direction & direction)
    {
       coord new_coord = current_coord_;
@@ -298,30 +309,27 @@ struct board
       return new_coord;
    }
 
-   //typedef boost::optional<size_t> index_t;
-
-   coord current_coord_;
-   coord start_coord_;
-
-   //optional_coord start_coord_;
-
+   ///@return @true if coordinates are within board
    bool is_sane(const coord & coord) const
 
    {
       return coord.x_ < width_ && coord.y_ < height_;
    }
 
+   ///@ return @true if board size matches with board width and height
    bool is_sane(const size_t& width, const size_t & height, const std::string & cells) const
 
    {
       return width * height == cells.size();
    }
 
+   ///@return @true if index is within board
    bool is_sane(const cells::size_type & idx) const
 
    {
       return solving_cells_.size() > idx;
    }
+
 
    cells::size_type to_index(const coord & coord) const
 
