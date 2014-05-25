@@ -1,15 +1,14 @@
-build_dir=/tmp
+build_dir=/tmp/stuff
 make=$(MAKE) --no-print-directory
 
 # make file dir
 src_dir:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 
-$(build_dir):
 all: $(build_dir)/cmake_bootstrap_success
-	@cd $(build_dir) && $(make) $@
+	+@cd $(build_dir) && $(make) $@
 
 clean:
-	@rm -rf $(build_dir)/
+	+@cd $(build_dir) && $(make) clean
 
 config: $(build_dir)/CMakeCache.txt
 	@ccmake $(build_dir)/
@@ -33,7 +32,7 @@ $(build_dir)/cmake_bootstrap_success:
 
 # Forward targets to cmake generated makefile
 %: $(build_dir)/cmake_bootstrap_success
-	@cd $(build_dir) && $(make) $@
+	+@cd $(build_dir) && $(make) $@
 
 #.PHONY: all clean config test
 .PHONY: all clean config
