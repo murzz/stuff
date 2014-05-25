@@ -142,6 +142,7 @@ void solve(boost::asio::io_service & io_service, coil::board board)
       coil::board::cell & starting_cell = board.starting_cells_.at(idx);
       if (coil::board::cell::empty == starting_cell)
       {
+         // set first step
          board.start_coord_ = board.to_coord(idx);
          board.current_coord_ = board.start_coord_;
          starting_cell = coil::board::cell::step; // mark as occupied on starting board

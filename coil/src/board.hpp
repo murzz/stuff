@@ -112,8 +112,7 @@ struct board
       level_ = level;
       width_ = width;
       height_ = height;
-      //cells_ = cells;
-      convert(solving_cells_, cells);
+      str_to_cells(solving_cells_, cells);
       starting_cells_ = solving_cells_;
    }
 
@@ -150,9 +149,9 @@ struct board
    boost::posix_time::ptime started_solving_;
    boost::posix_time::ptime finished_solving_;
 
-   void convert(cells & t, const std::string & string)
+   cells & str_to_cells(cells & cells, const std::string & string)
    {
-      t.clear();
+      cells.clear();
 
       for (const auto & value : string)
       {
@@ -165,7 +164,7 @@ struct board
 
             case board::cell::wall:
 
-               t.push_back(cell);
+               cells.push_back(cell);
                break;
             default:
 
@@ -176,6 +175,7 @@ struct board
             }
          }
       }
+      return cells;
    }
 
    bool step(const coil::direction & direction)
