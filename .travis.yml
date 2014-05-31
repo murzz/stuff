@@ -7,7 +7,7 @@ compiler:
 before_install:
  - lsb_release --all
  - sudo apt-get update
-# - sudo apt-get upgrade
+ - sudo apt-get upgrade
 
 install:
  - sudo apt-get install build-essential
