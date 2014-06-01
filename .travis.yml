@@ -10,7 +10,7 @@ before_install:
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
  - sudo apt-get update
  - sudo apt-get dist-upgrade
- - export CC=gcc-4.8 CXX=gcc-4.8
+# - export CC=gcc-4.8 CXX=gcc-4.8
 
 install:
  - sudo apt-get install gcc-4.8
