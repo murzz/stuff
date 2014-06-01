@@ -2,12 +2,25 @@ cmake_minimum_required(VERSION 2.8)
 set(name thread-pool)
 project(${name})
 
-find_package(Boost COMPONENTS thread system program_options timer REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
-
 add_definitions(-std=c++11)
+add_definitions(-DBOOST_ALL_DYN_LINK)
 
-add_executable (${name} src/main.cpp)
-target_link_libraries(${name} ${Boost_LIBRARIES} glog)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/mk/cmake-modules")
 
-set(CMAKE_BUILD_TYPE Debug)
+find_package(Boost COMPONENTS thread system program_options timer REQUIRED)
+find_package(GLog REQUIRED)
+
+set( ${name}_INCLUDE_DIRS
+    ${Boost_INCLUDE_DIRS}
+    ${GLOG_INCLUDE_DIRS}
+)
+
+set( ${name}_LIBRARIES
+    ${Boost_LIBRARIES}
+    ${GLOG_LIBRARIES}
+)
+
+include_directories(${${name}_INCLUDE_DIRS})
+
+add_executable(${name} src/main.cpp)
+target_link_libraries(${name} ${${name}_LIBRARIES} )
