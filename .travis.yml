@@ -9,7 +9,7 @@ before_install:
  - sudo apt-get install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
  - sudo apt-get update
- - sudo apt-get upgrade
+ - sudo apt-get dist-upgrade
  - export CC=gcc-4.8 CXX=gcc-4.8
 
 install:
