@@ -17,7 +17,7 @@ FIND_PATH(GLOG_INCLUDE_DIRS
     NAMES
         glog/logging.h
     PATHS
-        ${GLOG_ROOT_DIR}
+        ${GLOG_ROOT}
         /usr/local/include
         /usr/include
         $ENV{GLOG}
@@ -28,7 +28,7 @@ FIND_LIBRARY(GLOG_LIBRARIES
     NAMES
         glog
     PATHS
-        ${GLOG_ROOT_DIR}
+        ${GLOG_ROOT}
         /usr/local/lib
         /usr/lib
         $ENV{GLOG}
