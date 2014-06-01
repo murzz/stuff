@@ -25,7 +25,7 @@ before_script:
  - mkdir --parents "$build_dir/thread-pool"
 # boost
  - boost_dir="$build_dir/boost"
-   mkdir --parents "$boost_dir"
+ - mkdir --parents "$boost_dir"
  - export url=http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz/download
  - wget -qO- "$url" | tar xz --strip-component=1 -C "$boost_dir"
  - cd "$boost_dir"
