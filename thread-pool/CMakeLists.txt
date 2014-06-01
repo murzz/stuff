@@ -8,7 +8,7 @@ add_definitions(-DBOOST_ALL_DYN_LINK)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/mk/cmake-modules")
 
 find_package(Boost COMPONENTS thread system program_options timer REQUIRED)
-find_package(GLOG REQUIRED)
+find_package(GLog REQUIRED)
 
 set( ${name}_INCLUDE_DIRS
     ${Boost_INCLUDE_DIRS}
