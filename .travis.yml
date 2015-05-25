@@ -8,8 +8,8 @@ before_install:
  - lsb_release --all
  - sudo apt-get --yes install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
- - sudo apt-get --yes update
- - sudo apt-get --yes dist-upgrade
+# - sudo apt-get --yes update
+# - sudo apt-get --yes dist-upgrade
 
 install:
  - sudo apt-get install gcc-4.8
