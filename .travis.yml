@@ -37,7 +37,7 @@ before_script:
  - wget -qO- "$url" | tar xz --strip-component=1 -C "$boost_dir" &&
    cd "$boost_dir" &&
    ./bootstrap.sh &&
-   ./b2 toolset=$CC
+   ./b2 -j4 toolset=$CC
 # glog
  - glog_dir="$build_dir/glog"
  - mkdir --parents "$glog_dir"
