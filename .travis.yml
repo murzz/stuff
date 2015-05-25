@@ -6,21 +6,20 @@ compiler:
 
 before_install:
  - lsb_release --all
- - sudo apt-get install python-software-properties
+ - sudo apt-get --yes install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
- - sudo apt-get update
- - sudo apt-get dist-upgrade
-# - export CC=gcc-4.8 CXX=gcc-4.8
+ - sudo apt-get --yes update
+ - sudo apt-get --yes dist-upgrade
 
 install:
  - sudo apt-get install gcc-4.8
- - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50
- - sudo apt-get install build-essential
- - sudo apt-get install cmake
- - sudo apt-get install libboost-all-dev
- - sudo apt-get install libhtmlcxx-dev
- - sudo apt-get install libcurl4-*-dev
- - sudo apt-get install wget
+ - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 90
+ - sudo apt-get --yes install build-essential
+ - sudo apt-get --yes install cmake
+ - sudo apt-get --yes install libboost-all-dev
+ - sudo apt-get --yes install libhtmlcxx-dev
+ - sudo apt-get --yes install libcurl4-*-dev
+ - sudo apt-get --yes install wget
 
 before_script:
  - src_dir=$(pwd)
