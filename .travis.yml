@@ -15,9 +15,6 @@ install:
  - test "$CC" == "gcc" && sudo apt-get install gcc-4.8
  - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60
  - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 40
- - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.6 60
- - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 40
- - test "$CC" == "gcc" && sudo update-alternatives --config g++
  - test "$CC" == "gcc" && sudo update-alternatives --config gcc
  - sudo apt-get --yes install build-essential
  - sudo apt-get --yes install cmake
