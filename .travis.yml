@@ -12,10 +12,10 @@ before_install:
 # - sudo apt-get --yes dist-upgrade
 
 install:
- - test "$CC" == "gcc" && sudo apt-get install gcc-4.8
- - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60
- - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 40
- - test "$CC" == "gcc" && sudo update-alternatives --config gcc
+ - test "$CC" == "gcc" && sudo apt-get install gcc-4.8 || true
+ - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60 || true
+ - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 40 || true
+ - test "$CC" == "gcc" && sudo update-alternatives --config gcc || true
  - sudo apt-get --yes install build-essential
  - sudo apt-get --yes install cmake
  - sudo apt-get --yes install libboost-all-dev
