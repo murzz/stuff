@@ -16,8 +16,8 @@ install:
  - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 || true
  - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 || true
  #- test "$CC" == "gcc" && sudo update-alternatives --config gcc || true
- - test "$CC" == "gcc" && sudo update-alternatives --set gcc /usr/bin/gcc-4.8
- - test "$CC" == "gcc" && sudo update-alternatives --set g++ /usr/bin/g++-4.8
+ - test "$CC" == "gcc" && sudo update-alternatives --set gcc /usr/bin/gcc-4.8 || true
+ #- test "$CC" == "gcc" && sudo update-alternatives --set g++ /usr/bin/g++-4.8 || true
  - sudo apt-get --yes install build-essential
  - sudo apt-get --yes install cmake
  - sudo apt-get --yes install libboost-all-dev
