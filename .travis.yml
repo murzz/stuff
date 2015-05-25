@@ -19,7 +19,7 @@ install:
  - test "$CC" == "gcc" && sudo update-alternatives --set gcc /usr/bin/gcc-4.8 || true
  #- test "$CC" == "gcc" && sudo update-alternatives --set g++ /usr/bin/g++-4.8 || true
  - sudo apt-get --yes install wget build-essential
- - sudo apt-get --yes install cmake ninja
+ - sudo apt-get --yes install cmake
  - sudo apt-get --yes install libboost-all-dev
  - sudo apt-get --yes install libhtmlcxx-dev
  - sudo apt-get --yes install libcurl4-*-dev
@@ -50,12 +50,12 @@ before_script:
 
 script:
  - cd "$build_dir/coil" &&
-   cmake -G Ninja -DBOOST_ROOT="$boost_dir" "$src_dir/coil" &&
+   cmake -DBOOST_ROOT="$boost_dir" "$src_dir/coil" &&
    cmake --build . &&
    ./test
  - cd "$build_dir/triangle" &&
-   cmake -G Ninja "$src_dir/triangle" &&
+   cmake "$src_dir/triangle" &&
    cmake --build . 
  - cd "$build_dir/thread-pool" &&
-   cmake -G Ninja -DBOOST_ROOT="$boost_dir" -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
+   cmake -DBOOST_ROOT="$boost_dir" -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
    cmake --build . 
