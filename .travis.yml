@@ -51,7 +51,6 @@ before_script:
 
 script:
  - cd "$build_dir/coil" &&
-#   cmake -DBOOST_ROOT="$boost_dir" "$src_dir/coil" &&
    cmake "$src_dir/coil" &&
    cmake --build . &&
    ./test
@@ -59,6 +58,5 @@ script:
    cmake "$src_dir/triangle" &&
    cmake --build . 
  - cd "$build_dir/thread-pool" &&
-#   cmake -DBOOST_ROOT="$boost_dir" -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
    cmake -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
    cmake --build . 
