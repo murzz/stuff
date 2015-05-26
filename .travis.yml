@@ -21,7 +21,8 @@ install:
  #- test "$CC" == "gcc" && sudo update-alternatives --set g++ /usr/bin/g++-4.8 || true
  - sudo apt-get --yes install wget build-essential
  - sudo apt-get --yes install cmake
- - sudo apt-get --yes install libboost-all-dev
+ #- sudo apt-get --yes install libboost-all-dev
+ - sudo apt-get --yes install libboost1.55-all-dev
  - sudo apt-get --yes install libhtmlcxx-dev
  - sudo apt-get --yes install libcurl4-*-dev
 
