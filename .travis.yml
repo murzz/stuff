@@ -8,6 +8,7 @@ before_install:
 # - lsb_release --all
  - sudo apt-get --yes install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
+ - sudo add-apt-repository --yes ppa:boost-latest/ppa
  - sudo apt-get --yes update
 # - sudo apt-get --yes dist-upgrade
 
@@ -31,13 +32,13 @@ before_script:
  - mkdir --parents "$build_dir/triangle"
  - mkdir --parents "$build_dir/thread-pool"
 # boost
- - boost_dir="$build_dir/boost"
- - mkdir --parents "$boost_dir"
- - url=http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz/download
- - wget -qO- "$url" | tar xz --strip-component=1 -C "$boost_dir" &&
-   cd "$boost_dir" &&
-   ./bootstrap.sh &&
-   ./b2 -j4 toolset=$CC
+# - boost_dir="$build_dir/boost"
+# - mkdir --parents "$boost_dir"
+# - url=http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz/download
+# - wget -qO- "$url" | tar xz --strip-component=1 -C "$boost_dir" &&
+#   cd "$boost_dir" &&
+#   ./bootstrap.sh &&
+#   ./b2 -j4 toolset=$CC
 # glog
  - glog_dir="$build_dir/glog"
  - mkdir --parents "$glog_dir"
@@ -50,12 +51,14 @@ before_script:
 
 script:
  - cd "$build_dir/coil" &&
-   cmake -DBOOST_ROOT="$boost_dir" "$src_dir/coil" &&
+#   cmake -DBOOST_ROOT="$boost_dir" "$src_dir/coil" &&
+   cmake "$src_dir/coil" &&
    cmake --build . &&
    ./test
  - cd "$build_dir/triangle" &&
    cmake "$src_dir/triangle" &&
    cmake --build . 
  - cd "$build_dir/thread-pool" &&
-   cmake -DBOOST_ROOT="$boost_dir" -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
+#   cmake -DBOOST_ROOT="$boost_dir" -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
+   cmake -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
    cmake --build . 
