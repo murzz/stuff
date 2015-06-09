@@ -11,12 +11,6 @@ before_install:
  - sudo add-apt-repository --yes ppa:boost-latest/ppa
  - sudo apt-get --yes update
 # - sudo apt-get --yes dist-upgrade
-- wget http://code.google.com/p/google-glog/downloads/detail?name=glog-0.3.2.tar.gz
-- tar xvf glog-0.3.2.tar.gz
-- cd glog-0.3.2
-- ./configure
-- make
-- sudo make install
 
 install:
  - test "$CC" == "gcc" && sudo apt-get install gcc-4.8 || true
@@ -55,7 +49,7 @@ before_script:
    cd "$glog_dir" &&
    ./configure --prefix="$glog_dir" &&
    make &&
-   make install
+   sudo make install
 
 script:
  - cd "$build_dir/coil" &&
