@@ -25,6 +25,7 @@ install:
  - sudo apt-get --yes install libboost1.55-all-dev
  - sudo apt-get --yes install libhtmlcxx-dev
  - sudo apt-get --yes install libcurl4-*-dev
+ - sudo apt-get --yes install libgoogle-glog-dev
 
 before_script:
  - src_dir=$(pwd)
