@@ -33,9 +33,6 @@ install:
 before_script:
  - src_dir=$(pwd)
  - build_dir=$(mktemp --directory) 
- - mkdir --parents "$build_dir/coil"
- - mkdir --parents "$build_dir/triangle"
- - mkdir --parents "$build_dir/thread-pool"
 # boost
 # - boost_dir="$build_dir/boost"
 # - mkdir --parents "$boost_dir"
@@ -55,13 +52,4 @@ before_script:
  - sudo make install
 
 script:
- - cd "$build_dir/coil" &&
-   cmake "$src_dir/coil" &&
-   cmake --build . &&
-   ./test
- - cd "$build_dir/triangle" &&
-   cmake "$src_dir/triangle" &&
-   cmake --build . 
- - cd "$build_dir/thread-pool" &&
-   cmake -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
-   cmake --build . 
+ - cmake -H$src_dir -B$build_dir && cmake --build $build_dir 
