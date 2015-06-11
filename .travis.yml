@@ -46,8 +46,8 @@ before_script:
 #   ./b2 -j4 toolset=$CC
 # glog
  - glog_dir="$build_dir/glog"
- - mkdir --parents "$glog_dir"
- - url=https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
+   mkdir --parents "$glog_dir" &&
+   url=https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
    wget -qO- "$url" | tar xz --strip-component=1 -C "$glog_dir" &&
    cd "$glog_dir" &&
    ./configure --prefix="$glog_dir" &&
