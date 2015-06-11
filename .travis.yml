@@ -13,25 +13,22 @@ before_install:
 # - sudo apt-get --yes dist-upgrade
 
 install:
- - if test "$CC" == "gcc"; then
-     sudo apt-get install gcc-4.8 g++-4.8 &&
-     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
-     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 &&
-     sudo update-alternatives --config gcc &&
-     gcc --version;
-   fi
 # - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 || true
 # - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 || true
  #- test "$CC" == "gcc" && sudo update-alternatives --config gcc || true
 # - test "$CC" == "gcc" && sudo update-alternatives --set gcc /usr/bin/gcc-4.8 || true
  #- test "$CC" == "gcc" && sudo update-alternatives --set g++ /usr/bin/g++-4.8 || true
- - sudo apt-get --yes install wget build-essential
- - sudo apt-get --yes install cmake
+ - sudo apt-get --yes install build-essential wget cmake
  #- sudo apt-get --yes install libboost-all-dev
- - sudo apt-get --yes install libboost1.55-all-dev
- - sudo apt-get --yes install libhtmlcxx-dev
- - sudo apt-get --yes install libcurl4-*-dev
+ - sudo apt-get --yes install libboost1.55-all-dev libhtmlcxx-dev libcurl4-*-dev
  #- sudo apt-get --yes install libgoogle-glog-dev
+ - if test "$CC" == "gcc"; then
+     sudo apt-get install gcc-4.8 g++-4.8 &&
+     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
+     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 &&
+     sudo update-alternatives --auto gcc &&
+     gcc --version;
+   fi
 
 before_script:
  - src_dir=$(pwd)
@@ -51,7 +48,7 @@ before_script:
  - glog_dir="$build_dir/glog"
  - mkdir --parents "$glog_dir"
  - url=https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
- - wget -qO- "$url" | tar xz --strip-component=1 -C "$glog_dir" &&
+   wget -qO- "$url" | tar xz --strip-component=1 -C "$glog_dir" &&
    cd "$glog_dir" &&
    ./configure --prefix="$glog_dir" &&
    make &&
