@@ -13,11 +13,11 @@ before_install:
 # - sudo apt-get --yes dist-upgrade
 
 install:
- - if test "$CC" == "gcc"; then
-     sudo apt-get install gcc-4.8 g++-4.8
-     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6
-     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8
-     sudo update-alternatives --config gcc
+ - if test "$CC" == "gcc"; then;
+     sudo apt-get install gcc-4.8 g++-4.8 &&
+     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
+     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 &&
+     sudo update-alternatives --config gcc;
    fi
 # - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 || true
 # - test "$CC" == "gcc" && sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 || true
