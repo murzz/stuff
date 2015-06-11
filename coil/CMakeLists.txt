@@ -19,7 +19,7 @@ add_definitions(-DDISABLE_LONG_TESTS)
 add_definitions(-Wall)
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/mk/cmake-modules")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/mk/cmake-modules")
 
 find_package(Boost COMPONENTS system program_options unit_test_framework thread date_time log REQUIRED)
 find_package(CURL REQUIRED)
