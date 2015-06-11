@@ -5,7 +5,9 @@ project(${name})
 add_definitions(-std=c++11)
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/mk/cmake-modules")
+include(mk/glog.cmake)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} mk/cmake-modules)
 
 find_package(Boost COMPONENTS thread system program_options timer REQUIRED)
 find_package(GLog REQUIRED)
