@@ -17,7 +17,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${PROJECT_CXX_FLAGS}")
 
 add_definitions(-DBOOST_ALL_DYN_LINK)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/mk/glog.cmake)
+#include(${CMAKE_CURRENT_SOURCE_DIR}/mk/glog.cmake)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/mk/cmake-modules)
 
