@@ -5,18 +5,24 @@ compiler:
   - clang
 
 before_install:
-# - lsb_release --all
- - sudo apt-get --yes install python-software-properties
+ - lsb_release --all
+ - sudo apt-get --yes --quite install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
  - sudo add-apt-repository --yes ppa:boost-latest/ppa
- - sudo apt-get --yes update
-# - sudo apt-get --yes dist-upgrade
+ - sudo apt-get --yes --quite update
+# - sudo apt-get --yes --quite dist-upgrade
 
 install:
- - sudo apt-get --yes install build-essential wget cmake
- #- sudo apt-get --yes install libboost-all-dev
- - sudo apt-get --yes install libboost1.55-all-dev libhtmlcxx-dev libcurl4-*-dev
- #- sudo apt-get --yes install libgoogle-glog-dev
+ - sudo apt-get --yes --quiet install
+   build-essential
+   wget
+   cmake
+ - sudo apt-get --yes --quiet install
+   libboost1.55-all-dev
+   libhtmlcxx-dev
+   libcurl4-*-dev
+# libboost-all-dev
+# libgoogle-glog-dev
  - if test "$CC" == "gcc"; then
      sudo apt-get install gcc-4.8 g++-4.8 &&
      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
