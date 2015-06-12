@@ -5,55 +5,38 @@ compiler:
   - clang
 
 before_install:
- - lsb_release --all
- - sudo apt-get install python-software-properties
+# - lsb_release --all
+ - sudo apt-get --yes install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
- - sudo apt-get update
- - sudo apt-get dist-upgrade
-# - export CC=gcc-4.8 CXX=gcc-4.8
+ - sudo add-apt-repository --yes ppa:boost-latest/ppa
+ - sudo apt-get --yes update
+# - sudo apt-get --yes dist-upgrade
 
 install:
- - sudo apt-get install gcc-4.8
- - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 50
- - sudo apt-get install build-essential
- - sudo apt-get install cmake
- - sudo apt-get install libboost-all-dev
- - sudo apt-get install libhtmlcxx-dev
- - sudo apt-get install libcurl4-*-dev
- - sudo apt-get install wget
+ - sudo apt-get --yes install build-essential wget cmake
+ #- sudo apt-get --yes install libboost-all-dev
+ - sudo apt-get --yes install libboost1.55-all-dev libhtmlcxx-dev libcurl4-*-dev
+ #- sudo apt-get --yes install libgoogle-glog-dev
+ - if test "$CC" == "gcc"; then
+     sudo apt-get install gcc-4.8 g++-4.8 &&
+     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
+     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 &&
+     sudo update-alternatives --auto gcc &&
+     gcc --version;
+   fi
 
 before_script:
  - src_dir=$(pwd)
  - build_dir=$(mktemp --directory) 
- - mkdir --parents "$build_dir/coil"
- - mkdir --parents "$build_dir/triangle"
- - mkdir --parents "$build_dir/thread-pool"
 # boost
- - boost_dir="$build_dir/boost"
- - mkdir --parents "$boost_dir"
- - url=http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz/download
- - wget -qO- "$url" | tar xz --strip-component=1 -C "$boost_dir" &&
-   cd "$boost_dir" &&
-   ./bootstrap.sh &&
-   ./b2
+# - boost_dir="$build_dir/boost"
+# - mkdir --parents "$boost_dir"
+# - url=http://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz/download
+# - wget -qO- "$url" | tar xz --strip-component=1 -C "$boost_dir" &&
+#   cd "$boost_dir" &&
+#   ./bootstrap.sh &&
+#   ./b2 -j4 toolset=$CC
 # glog
- - glog_dir="$build_dir/glog"
- - mkdir --parents "$glog_dir"
- - url=https://google-glog.googlecode.com/files/glog-0.3.3.tar.gz
- - wget -qO- "$url" | tar xz --strip-component=1 -C "$glog_dir" &&
-   cd "$glog_dir" &&
-   ./configure --prefix="$glog_dir" &&
-   make &&
-   make install
 
 script:
- - cd "$build_dir/coil" &&
-   cmake -DBOOST_ROOT="$boost_dir" "$src_dir/coil" &&
-   make &&
-   ./test
- - cd "$build_dir/triangle" &&
-   cmake "$src_dir/triangle" &&
-   make
- - cd "$build_dir/thread-pool" &&
-   cmake -DBOOST_ROOT="$boost_dir" -DGLOG_ROOT="$glog_dir" "$src_dir/thread-pool" &&
-   make
+ - cmake -H$src_dir -B$build_dir && cmake --build $build_dir --target glog
