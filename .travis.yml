@@ -6,11 +6,11 @@ compiler:
 
 before_install:
  - lsb_release --all
- - sudo apt-get --yes --quite install python-software-properties
+ - sudo apt-get --yes --quiet install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
  - sudo add-apt-repository --yes ppa:boost-latest/ppa
- - sudo apt-get --yes --quite update
-# - sudo apt-get --yes --quite dist-upgrade
+ - sudo apt-get --yes --quiet update
+# - sudo apt-get --yes --quiet dist-upgrade
 
 install:
  - sudo apt-get --yes --quiet install
