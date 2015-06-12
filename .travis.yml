@@ -37,6 +37,14 @@ before_script:
 #   ./bootstrap.sh &&
 #   ./b2 -j4 toolset=$CC
 # glog
+ - glog_dir="$build_dir/glog"
+ - mkdir --parents "$glog_dir"
+ - url=https://github.com/google/glog/archive/v0.3.4.zip
+ - wget -qO- "$url" | tar xz --strip-component=1 -C "$glog_dir"
+ - cd "$glog_dir"
+ - ./configure
+ - make 
+ - sudo make install
 
 script:
  - cmake -H$src_dir -B$build_dir && cmake --build $build_dir --target glog
