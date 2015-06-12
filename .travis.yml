@@ -43,8 +43,8 @@ before_script:
  - wget -qO- "$url" | tar xz --strip-component=1 -C "$glog_dir"
  - cd "$glog_dir"
  - ./configure
- - make 
+ - make -j4
  - sudo make install
 
 script:
- - cmake -H$src_dir -B$build_dir && cmake --build $build_dir --target glog
+ - cmake -H$src_dir -B$build_dir && cmake --build $build_dir
