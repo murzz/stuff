@@ -14,17 +14,21 @@ before_install:
 
 install:
  - sudo apt-get --yes --quiet install
+ # buildtools
    build-essential
    wget
    cmake
- - sudo apt-get --yes --quiet install
+ # toolchain
+   gcc-4.8
+   g++-4.8
+   libstdc++-4.8-dev
+ # dependencies
+ # libboost-all-dev
    libboost1.55-all-dev
    libhtmlcxx-dev
    libcurl4-*-dev
-# libboost-all-dev
 # libgoogle-glog-dev
  - if test "$CC" == "gcc"; then
-     sudo apt-get install gcc-4.8 g++-4.8 libstdc++-4.8-dev &&
 #     sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 &&
      sudo update-alternatives --auto gcc &&
