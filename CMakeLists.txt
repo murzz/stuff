@@ -5,7 +5,7 @@ project(stuff)
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   # using Clang
   #set(LOCAL_CXX_FLAGS "-std=c++1y -stdlib=libc++")
-  set(LOCAL_CXX_FLAGS "-std=c++1y -stdlib=libc++")
+  set(LOCAL_CXX_FLAGS "-std=c++1y")
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
   # using GCC
   set(LOCAL_CXX_FLAGS "-std=c++1y -fsanitize=address -fno-omit-frame-pointer")
