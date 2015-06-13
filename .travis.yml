@@ -14,16 +14,16 @@ before_install:
 
 install:
  - sudo apt-get --yes --quiet install
- # buildtools
+#   buildtools
    build-essential
    wget
    cmake
- # toolchain
+#   toolchain
    gcc-4.8
    g++-4.8
    libstdc++-4.8-dev
- # dependencies
- # libboost-all-dev
+#   dependencies
+#   libboost-all-dev
    libboost1.55-all-dev
    libhtmlcxx-dev
    libcurl4-*-dev
@@ -60,4 +60,5 @@ script:
  - cmake -H$src_dir -B$build_dir && cmake --build $build_dir
  
  after_success:
-  - $build_dir/triangle/test
+ - $build_dir/coin/tests
+ - $build_dir/triangle/triangle
