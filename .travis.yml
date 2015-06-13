@@ -14,20 +14,15 @@ before_install:
 
 install:
  - sudo apt-get --yes --quiet install
-#   buildtools
    build-essential
    wget
    cmake
-#   toolchain
    gcc-4.8
    g++-4.8
    libstdc++-4.8-dev
-#   dependencies
-#   libboost-all-dev
    libboost1.55-all-dev
    libhtmlcxx-dev
    libcurl4-*-dev
-# libgoogle-glog-dev
  - if test "$CC" == "gcc"; then
      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 &&
@@ -59,6 +54,6 @@ before_script:
 script:
  - cmake -H$src_dir -B$build_dir && cmake --build $build_dir
  
- after_success:
+after_success:
  - $build_dir/coin/tests
  - $build_dir/triangle/triangle
