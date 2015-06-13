@@ -58,3 +58,6 @@ before_script:
 
 script:
  - cmake -H$src_dir -B$build_dir && cmake --build $build_dir
+ 
+ after_success:
+  - $build_dir/triangle/test
