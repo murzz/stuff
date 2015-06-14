@@ -12,8 +12,8 @@ before_install:
 # - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|sudo apt-key add -
 # - sudo add-apt-repository --yes 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main'
  - sudo apt-get --yes --quiet update
- - sudo apt-get --yes --force-yes --quiet upgrade
- - sudo apt-get --yes --force-yes --quiet dist-upgrade
+ - yes Y | sudo apt-get --yes --force-yes --quiet upgrade
+ - yes Y | sudo apt-get --yes --force-yes --quiet dist-upgrade
 
 install:
  - sudo apt-get --yes --quiet install
