@@ -19,6 +19,7 @@ install:
    build-essential
    wget
    cmake
+   ninja
    gcc-4.8
    g++-4.8
    libstdc++-4.8-dev
@@ -34,7 +35,8 @@ install:
 
 before_script:
  - src_dir=$(pwd)
- - build_dir=$(mktemp --directory) 
+ - build_dir=$(mktemp --directory)
+ - build_dir_ninja=$(mktemp --directory)
 # boost
 # - boost_dir="$build_dir/boost"
 # - mkdir --parents "$boost_dir"
@@ -55,6 +57,7 @@ before_script:
 
 script:
  - cmake -H$src_dir -B$build_dir && cmake --build $build_dir
+ - cmake -H$src_dir -B$build_dir_ninja && cmake --build $build_dir_ninja
  
 after_success:
  - $build_dir/coil/tests
