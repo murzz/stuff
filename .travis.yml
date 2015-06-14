@@ -19,7 +19,7 @@ install:
    build-essential
    wget
    cmake
-   ninja
+   ninja-build
    gcc-4.8
    g++-4.8
    libstdc++-4.8-dev
