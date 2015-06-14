@@ -67,5 +67,5 @@ script:
 after_success:
  - $build_dir/coil/tests
  - $build_dir/triangle/triangle
- - $build_dir/thread-pool/thread-pool
+# - $build_dir/thread-pool/thread-pool
  - cd $build_dir/coil/ && ctest
