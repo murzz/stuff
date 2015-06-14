@@ -316,7 +316,7 @@ struct fibo
             fibo f2(idx_ - 1, value2);
             f2.calculate();
 
-            value_ = tmp_value1 + tmp_value2;
+            value_ = value1 + value2;
             break;
       }
    }
