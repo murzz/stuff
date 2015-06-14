@@ -32,11 +32,11 @@ install:
  - if test "$CC" == "gcc"; then
      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.6 40 --slave /usr/bin/g++ g++ /usr/bin/g++-4.6 &&
      sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-4.8 &&
-     sudo update-alternatives --auto gcc &&
-     gcc --version;
+     sudo update-alternatives --auto gcc;
    fi
  - cmake --version
  - ninja --version
+ - gcc --version
 
 before_script:
  - src_dir=$(pwd)
@@ -67,4 +67,5 @@ script:
 after_success:
  - $build_dir/coil/tests
  - $build_dir/triangle/triangle
+ - $build_dir/thread-pool/thread-pool
  - cd $build_dir/coil/ && ctest

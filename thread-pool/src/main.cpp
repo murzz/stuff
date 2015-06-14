@@ -295,28 +295,34 @@ struct fibo
    {
 
    }
-   void operator()()
+   
+   void calculate()
    {
-      switch (idx_)
+	  switch (idx_)
       {
          case 0:
-            case 1:
+         case 1:
             value_ = 0;
             break;
          case 2:
             value_ = 1;
             break;
          default:
-            std::size_t tmp_value1 = 0, tmp_value2 = 0;
-            fibo f1(idx_ - 1, tmp_value1);
-            f1();
+            std::size_t value1 = 0, value2 = 0;
+			
+            fibo f1(idx_ - 2, value1);
+            f1.calculate();
 
-            fibo f2(idx_ - 2, tmp_value2);
-            f2();
+            fibo f2(idx_ - 1, value2);
+            f2.calculate();
 
             value_ = tmp_value1 + tmp_value2;
             break;
       }
+   }
+   void operator()()
+   {
+		calculate();
    }
 };
 
