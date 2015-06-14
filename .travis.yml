@@ -9,11 +9,12 @@ before_install:
  - sudo apt-get --yes --quiet install python-software-properties
  - sudo add-apt-repository --yes ppa:ubuntu-toolchain-r/test
  - sudo add-apt-repository --yes ppa:boost-latest/ppa
+ - sudo add-apt-repository --yes ppa:bryce/backports
 # - wget -O - http://llvm.org/apt/llvm-snapshot.gpg.key|sudo apt-key add -
 # - sudo add-apt-repository --yes 'deb http://llvm.org/apt/precise/ llvm-toolchain-precise-3.5 main'
  - sudo apt-get --yes --quiet update
- - yes Y | sudo apt-get --yes --force-yes --quiet upgrade
- - yes Y | sudo apt-get --yes --force-yes --quiet dist-upgrade
+# - yes Y | sudo apt-get --yes --force-yes --quiet upgrade
+# - yes Y | sudo apt-get --yes --force-yes --quiet dist-upgrade
 
 install:
  - sudo apt-get --yes --quiet install
@@ -33,6 +34,8 @@ install:
      sudo update-alternatives --auto gcc &&
      gcc --version;
    fi
+ - cmake
+ - ninja
 
 before_script:
  - src_dir=$(pwd)
@@ -57,7 +60,6 @@ before_script:
  - sudo make install
 
 script:
- - cmake
  - cmake -H$src_dir -B$build_dir && cmake --build $build_dir
  - cmake -GNinja -H$src_dir -B$build_dir_ninja && cmake --build $build_dir_ninja
  
