@@ -34,8 +34,8 @@ install:
      sudo update-alternatives --auto gcc &&
      gcc --version;
    fi
- - cmake
- - ninja
+ - cmake --version
+ - ninja --version
 
 before_script:
  - src_dir=$(pwd)
