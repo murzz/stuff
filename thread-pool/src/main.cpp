@@ -250,7 +250,7 @@ struct async_wrapper
 struct env
 {
    size_t pool_size_;
-   const size_t defalt_pool_size_ = 2;
+   static const size_t defalt_pool_size_ = 2;
    env() :
       pool_size_(defalt_pool_size_)
    {
