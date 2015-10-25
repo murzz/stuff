@@ -4,6 +4,8 @@ compiler:
   - gcc
   - clang
 
+sudo: required
+
 before_install:
  - lsb_release --all
  - sudo apt-get --yes --quiet install python-software-properties
